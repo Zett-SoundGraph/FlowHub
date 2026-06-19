@@ -1,0 +1,283 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// coverage:ignore-file
+// ignore_for_file: type=lint
+// ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
+
+part of 'kds_state.dart';
+
+// **************************************************************************
+// FreezedGenerator
+// **************************************************************************
+
+// dart format off
+T _$identity<T>(T value) => value;
+/// @nodoc
+mixin _$KdsState {
+
+ List<Order> get orders; bool get isConnected; String? get errorMessage;
+/// Create a copy of KdsState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$KdsStateCopyWith<KdsState> get copyWith => _$KdsStateCopyWithImpl<KdsState>(this as KdsState, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is KdsState&&const DeepCollectionEquality().equals(other.orders, orders)&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(orders),isConnected,errorMessage);
+
+@override
+String toString() {
+  return 'KdsState(orders: $orders, isConnected: $isConnected, errorMessage: $errorMessage)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $KdsStateCopyWith<$Res>  {
+  factory $KdsStateCopyWith(KdsState value, $Res Function(KdsState) _then) = _$KdsStateCopyWithImpl;
+@useResult
+$Res call({
+ List<Order> orders, bool isConnected, String? errorMessage
+});
+
+
+
+
+}
+/// @nodoc
+class _$KdsStateCopyWithImpl<$Res>
+    implements $KdsStateCopyWith<$Res> {
+  _$KdsStateCopyWithImpl(this._self, this._then);
+
+  final KdsState _self;
+  final $Res Function(KdsState) _then;
+
+/// Create a copy of KdsState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? orders = null,Object? isConnected = null,Object? errorMessage = freezed,}) {
+  return _then(_self.copyWith(
+orders: null == orders ? _self.orders : orders // ignore: cast_nullable_to_non_nullable
+as List<Order>,isConnected: null == isConnected ? _self.isConnected : isConnected // ignore: cast_nullable_to_non_nullable
+as bool,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [KdsState].
+extension KdsStatePatterns on KdsState {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _KdsState value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _KdsState() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _KdsState value)  $default,){
+final _that = this;
+switch (_that) {
+case _KdsState():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _KdsState value)?  $default,){
+final _that = this;
+switch (_that) {
+case _KdsState() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<Order> orders,  bool isConnected,  String? errorMessage)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _KdsState() when $default != null:
+return $default(_that.orders,_that.isConnected,_that.errorMessage);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<Order> orders,  bool isConnected,  String? errorMessage)  $default,) {final _that = this;
+switch (_that) {
+case _KdsState():
+return $default(_that.orders,_that.isConnected,_that.errorMessage);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<Order> orders,  bool isConnected,  String? errorMessage)?  $default,) {final _that = this;
+switch (_that) {
+case _KdsState() when $default != null:
+return $default(_that.orders,_that.isConnected,_that.errorMessage);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class _KdsState implements KdsState {
+  const _KdsState({required final  List<Order> orders, this.isConnected = false, this.errorMessage}): _orders = orders;
+  
+
+ final  List<Order> _orders;
+@override List<Order> get orders {
+  if (_orders is EqualUnmodifiableListView) return _orders;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_orders);
+}
+
+@override@JsonKey() final  bool isConnected;
+@override final  String? errorMessage;
+
+/// Create a copy of KdsState
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$KdsStateCopyWith<_KdsState> get copyWith => __$KdsStateCopyWithImpl<_KdsState>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _KdsState&&const DeepCollectionEquality().equals(other._orders, _orders)&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_orders),isConnected,errorMessage);
+
+@override
+String toString() {
+  return 'KdsState(orders: $orders, isConnected: $isConnected, errorMessage: $errorMessage)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$KdsStateCopyWith<$Res> implements $KdsStateCopyWith<$Res> {
+  factory _$KdsStateCopyWith(_KdsState value, $Res Function(_KdsState) _then) = __$KdsStateCopyWithImpl;
+@override @useResult
+$Res call({
+ List<Order> orders, bool isConnected, String? errorMessage
+});
+
+
+
+
+}
+/// @nodoc
+class __$KdsStateCopyWithImpl<$Res>
+    implements _$KdsStateCopyWith<$Res> {
+  __$KdsStateCopyWithImpl(this._self, this._then);
+
+  final _KdsState _self;
+  final $Res Function(_KdsState) _then;
+
+/// Create a copy of KdsState
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? orders = null,Object? isConnected = null,Object? errorMessage = freezed,}) {
+  return _then(_KdsState(
+orders: null == orders ? _self._orders : orders // ignore: cast_nullable_to_non_nullable
+as List<Order>,isConnected: null == isConnected ? _self.isConnected : isConnected // ignore: cast_nullable_to_non_nullable
+as bool,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+// dart format on
