@@ -110,13 +110,13 @@ The project has two main entrypoints:
 Run dev:
 
 ```bash
-flutter run -t lib/main_dev.dart
+flutter run --flavor dev -t lib/main_dev.dart
 ```
 
 Run prod:
 
 ```bash
-flutter run -t lib/main_prod.dart
+flutter run --flavor prod -t lib/main_prod.dart
 ```
 
 Notes:
@@ -124,6 +124,14 @@ Notes:
 - setupLocator(Env.dev()) and setupLocator(Env.prod()) are called in each entrypoint.
 - Env currently has empty default apiUrl values, so pass proper values when HTTP API integration is needed.
 - WebSocket connection settings are currently hardcoded inside the remote socket datasource.
+- Android product flavors are configured in `android/app/build.gradle.kts`.
+
+Build APK by flavor:
+
+```bash
+flutter build apk --flavor dev -t lib/main_dev.dart
+flutter build apk --flavor prod -t lib/main_prod.dart
+```
 
 ## 5. Folder Structure
 
@@ -202,6 +210,38 @@ export 'complete_cooking_usecase.dart';
 export 'complete_pickup_usecase.dart';
 ```
 
+### 6.7 Version Naming Rule
+
+- Keep the `pubspec.yaml` version in this format:
+  - `version: MAJOR.MINOR.DATE+BUILD`
+- Current team convention:
+  - `MAJOR`: breaking release line (for example `0`, `1`)
+  - `MINOR`: feature milestone line (for example `1`, `2`)
+  - `DATE`: release date in `MMDD` (for example `0622`)
+  - `BUILD`: incremental build number for the same date/release line (for example `01`, `02`)
+
+Valid examples:
+
+```yaml
+version: 0.1.0622+01
+version: 0.1.0622+02
+version: 0.2.0701+01
+```
+
+Rules:
+
+- Increase `BUILD` for repeated builds on the same release date.
+- Change `DATE` when you cut a new release day.
+- Increase `MINOR` for the next milestone stream.
+- Increase `MAJOR` only for major/breaking release lines.
+
+APK script note:
+
+- `scripts/build_apk.sh` converts `version` into `<build-name>.<build-number>` for exported file names.
+- Example:
+  - `version: 0.1.0622+01`
+  - output file: `FlowHub_KDS_0.1.0622.01-dev.apk`
+
 ## 7. KDS Usage Flow
 
 ### 7.1 Main Flow
@@ -258,6 +298,7 @@ DI setup location:
 
 In scripts/:
 
+- build_apk.sh: build/export apk by flavor (`dev|prod`) and mode (`debug|profile|release`)
 - gen_code.sh: run build_runner code generation
 - gen_all.sh: run build_runner + fluttergen
 - get_asset.sh: run fluttergen
@@ -266,6 +307,20 @@ Current script notes:
 
 - `gen_all.sh` requires `fluttergen` to be installed and available in PATH.
 - If `fluttergen` is not installed, use `gen_code.sh` or run `flutter pub run build_runner build` directly.
+
+Build APK via script:
+
+```bash
+./scripts/build_apk.sh dev
+./scripts/build_apk.sh prod --mode release
+./scripts/build_apk.sh dev --mode debug --output ~/Documents/FlowHub_KDS
+```
+
+Output format:
+
+```text
+FlowHub_KDS_<version>-<flavor>.apk
+```
 
 If a script fails with command not found:
 

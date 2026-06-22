@@ -21,8 +21,103 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    # Style and readability
+    # Require explicit return types.
+    # Not good: fetchUser() { ... }
+    # Expected: Future<User> fetchUser() { ... }
+    always_declare_return_types: true
+
+    # Require explicit variable types (avoid implicit inference everywhere).
+    # Not good: final users = <User>[];
+    # Expected: final List<User> users = <User>[];
+    always_specify_types: true
+
+    # Keep import/export/part directives ordered consistently.
+    # Not good: import 'b.dart'; import 'a.dart';
+    # Expected: import 'a.dart'; import 'b.dart';
+    directives_ordering: true
+
+    # Put constructors before other members for easier scanning.
+    # Not good: class A { void run() {} A(); }
+    # Expected: class A { A(); void run() {} }
+    sort_constructors_first: true
+
+    # Safer, more consistent Flutter code
+    # Avoid debug prints in production code.
+    # Not good: print('error: $e');
+    # Expected: logger.e('error', e);
+    avoid_print: true
+
+    # Prevent redundant Container wrappers.
+    # Not good: Container(child: Text('Hi'))
+    # Expected: Text('Hi')
+    avoid_unnecessary_containers: true
+
+    # Prefer const constructors when values are compile-time constants.
+    # Not good: final w = Text('Cafe');
+    # Expected: final Text w = const Text('Cafe');
+    prefer_const_constructors: true
+
+    # Prefer const for immutable collection literals.
+    # Not good: final items = [1, 2, 3];
+    # Expected: final List<int> items = const [1, 2, 3];
+    prefer_const_literals_to_create_immutables: true
+
+    # Ensure widgets expose Key in constructors.
+    # Not good: const UserCard({required this.name});
+    # Expected: const UserCard({super.key, required this.name});
+    use_key_in_widget_constructors: true
+
+    # Better API and maintainability
+    # Prefer final fields when reassignment is not needed.
+    # Not good: String name;
+    # Expected: final String name;
+    prefer_final_fields: true
+
+    # Prefer final local variables when not reassigned.
+    # Not good: var total = 0;
+    # Expected: final int total = 0;
+    prefer_final_locals: true
+
+    # Avoid calling members on dynamic values.
+    # Not good: dynamic data = getData(); data.save();
+    # Expected: final UserData data = getData(); data.save();
+    avoid_dynamic_calls: true
+
+    # Avoid explicitly declaring dynamic type.
+    # Not good: dynamic value = response.data;
+    # Expected: final Map<String, Object?> value = response.data;
+    avoid_annotating_with_dynamic: true
+
+    # Local variable names should not start with underscore.
+    # Not good: final _count = 1;
+    # Expected: final count = 1;
+    no_leading_underscores_for_local_identifiers: true
+
+    # Use single quotes consistently for strings.
+    # Not good: const title = "Cafe Beta";
+    # Expected: const title = 'Cafe Beta';
+    prefer_single_quotes: true
+
+    # Always put control body on a new line for better readability.
+    # Not good: if (isLoading) { showLoading(); }
+    # Expected:
+    # if (isLoading) {
+    #   showLoading();
+    # }
+    always_put_control_body_on_new_line: true
+
+    # Avoid empty else blocks.
+    # Not good:
+    # if (isLoading) {
+    #   showLoading();
+    # } else {
+    # }
+    # Expected:
+    # if (isLoading) {
+    #   showLoading();
+    # }
+    avoid_empty_else: true
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

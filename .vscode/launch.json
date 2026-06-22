@@ -5,11 +5,42 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "FlowHub (Default Debug)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--no-enable-impeller"]
+    },
+    {
+      "name": "FlowHub (Default Profile)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "program": "lib/main.dart",
+      "args": ["--no-enable-impeller"]
+    },
+    {
+      "name": "FlowHub (Default Release)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "program": "lib/main.dart",
+      "args": ["--no-enable-impeller"]
+    },
+    {
       "name": "FlowHub (Dev Debug)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main_dev.dart",
-      "args": ["--no-enable-impeller"]
+      "args": ["--flavor", "dev", "--no-enable-impeller"]
+    },
+    {
+      "name": "FlowHub (Dev Profile)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "program": "lib/main_dev.dart",
+      "args": ["--flavor", "dev", "--no-enable-impeller"]
     },
     {
       "name": "FlowHub (Dev Release)",
@@ -17,14 +48,22 @@
       "type": "dart",
       "flutterMode": "release",
       "program": "lib/main_dev.dart",
-      "args": ["--no-enable-impeller"]
+      "args": ["--flavor", "dev", "--no-enable-impeller"]
     },
     {
       "name": "FlowHub (Prod Debug)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main_prod.dart",
-      "args": ["--no-enable-impeller"]
+      "args": ["--flavor", "prod", "--no-enable-impeller"]
+    },
+    {
+      "name": "FlowHub (Prod Profile)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "program": "lib/main_prod.dart",
+      "args": ["--flavor", "prod", "--no-enable-impeller"]
     },
     {
       "name": "FlowHub (Prod Release)",
@@ -32,7 +71,7 @@
       "type": "dart",
       "flutterMode": "release",
       "program": "lib/main_prod.dart",
-      "args": ["--no-enable-impeller"]
-    },
+      "args": ["--flavor", "prod", "--no-enable-impeller"]
+    }
   ]
 }

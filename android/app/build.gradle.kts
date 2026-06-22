@@ -28,6 +28,21 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["appName"] = "FlowHub KDS"
+    }
+
+    flavorDimensions += "env"
+    productFlavors {
+        create("dev") {
+            dimension = "env"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            manifestPlaceholders["appName"] = "FlowHub KDS Dev"
+        }
+        create("prod") {
+            dimension = "env"
+            manifestPlaceholders["appName"] = "FlowHub KDS"
+        }
     }
 
     buildTypes {
