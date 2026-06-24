@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$KdsState {
 
- List<Order> get orders; bool get isConnected; String? get errorMessage;
+ List<Order> get orders; bool get isConnected; bool get isLabelAttached; bool get isCalibrating; int get manufacturingQueueLength; String? get errorMessage;
 /// Create a copy of KdsState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $KdsStateCopyWith<KdsState> get copyWith => _$KdsStateCopyWithImpl<KdsState>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is KdsState&&const DeepCollectionEquality().equals(other.orders, orders)&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is KdsState&&const DeepCollectionEquality().equals(other.orders, orders)&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.isLabelAttached, isLabelAttached) || other.isLabelAttached == isLabelAttached)&&(identical(other.isCalibrating, isCalibrating) || other.isCalibrating == isCalibrating)&&(identical(other.manufacturingQueueLength, manufacturingQueueLength) || other.manufacturingQueueLength == manufacturingQueueLength)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(orders),isConnected,errorMessage);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(orders),isConnected,isLabelAttached,isCalibrating,manufacturingQueueLength,errorMessage);
 
 @override
 String toString() {
-  return 'KdsState(orders: $orders, isConnected: $isConnected, errorMessage: $errorMessage)';
+  return 'KdsState(orders: $orders, isConnected: $isConnected, isLabelAttached: $isLabelAttached, isCalibrating: $isCalibrating, manufacturingQueueLength: $manufacturingQueueLength, errorMessage: $errorMessage)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $KdsStateCopyWith<$Res>  {
   factory $KdsStateCopyWith(KdsState value, $Res Function(KdsState) _then) = _$KdsStateCopyWithImpl;
 @useResult
 $Res call({
- List<Order> orders, bool isConnected, String? errorMessage
+ List<Order> orders, bool isConnected, bool isLabelAttached, bool isCalibrating, int manufacturingQueueLength, String? errorMessage
 });
 
 
@@ -62,11 +62,14 @@ class _$KdsStateCopyWithImpl<$Res>
 
 /// Create a copy of KdsState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? orders = null,Object? isConnected = null,Object? errorMessage = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? orders = null,Object? isConnected = null,Object? isLabelAttached = null,Object? isCalibrating = null,Object? manufacturingQueueLength = null,Object? errorMessage = freezed,}) {
   return _then(_self.copyWith(
 orders: null == orders ? _self.orders : orders // ignore: cast_nullable_to_non_nullable
 as List<Order>,isConnected: null == isConnected ? _self.isConnected : isConnected // ignore: cast_nullable_to_non_nullable
-as bool,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
+as bool,isLabelAttached: null == isLabelAttached ? _self.isLabelAttached : isLabelAttached // ignore: cast_nullable_to_non_nullable
+as bool,isCalibrating: null == isCalibrating ? _self.isCalibrating : isCalibrating // ignore: cast_nullable_to_non_nullable
+as bool,manufacturingQueueLength: null == manufacturingQueueLength ? _self.manufacturingQueueLength : manufacturingQueueLength // ignore: cast_nullable_to_non_nullable
+as int,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -152,10 +155,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<Order> orders,  bool isConnected,  String? errorMessage)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<Order> orders,  bool isConnected,  bool isLabelAttached,  bool isCalibrating,  int manufacturingQueueLength,  String? errorMessage)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _KdsState() when $default != null:
-return $default(_that.orders,_that.isConnected,_that.errorMessage);case _:
+return $default(_that.orders,_that.isConnected,_that.isLabelAttached,_that.isCalibrating,_that.manufacturingQueueLength,_that.errorMessage);case _:
   return orElse();
 
 }
@@ -173,10 +176,10 @@ return $default(_that.orders,_that.isConnected,_that.errorMessage);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<Order> orders,  bool isConnected,  String? errorMessage)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<Order> orders,  bool isConnected,  bool isLabelAttached,  bool isCalibrating,  int manufacturingQueueLength,  String? errorMessage)  $default,) {final _that = this;
 switch (_that) {
 case _KdsState():
-return $default(_that.orders,_that.isConnected,_that.errorMessage);case _:
+return $default(_that.orders,_that.isConnected,_that.isLabelAttached,_that.isCalibrating,_that.manufacturingQueueLength,_that.errorMessage);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -193,10 +196,10 @@ return $default(_that.orders,_that.isConnected,_that.errorMessage);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<Order> orders,  bool isConnected,  String? errorMessage)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<Order> orders,  bool isConnected,  bool isLabelAttached,  bool isCalibrating,  int manufacturingQueueLength,  String? errorMessage)?  $default,) {final _that = this;
 switch (_that) {
 case _KdsState() when $default != null:
-return $default(_that.orders,_that.isConnected,_that.errorMessage);case _:
+return $default(_that.orders,_that.isConnected,_that.isLabelAttached,_that.isCalibrating,_that.manufacturingQueueLength,_that.errorMessage);case _:
   return null;
 
 }
@@ -208,7 +211,7 @@ return $default(_that.orders,_that.isConnected,_that.errorMessage);case _:
 
 
 class _KdsState implements KdsState {
-  const _KdsState({required final  List<Order> orders, this.isConnected = false, this.errorMessage}): _orders = orders;
+  const _KdsState({required final  List<Order> orders, this.isConnected = false, this.isLabelAttached = false, this.isCalibrating = false, this.manufacturingQueueLength = 0, this.errorMessage}): _orders = orders;
   
 
  final  List<Order> _orders;
@@ -219,6 +222,9 @@ class _KdsState implements KdsState {
 }
 
 @override@JsonKey() final  bool isConnected;
+@override@JsonKey() final  bool isLabelAttached;
+@override@JsonKey() final  bool isCalibrating;
+@override@JsonKey() final  int manufacturingQueueLength;
 @override final  String? errorMessage;
 
 /// Create a copy of KdsState
@@ -231,16 +237,16 @@ _$KdsStateCopyWith<_KdsState> get copyWith => __$KdsStateCopyWithImpl<_KdsState>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _KdsState&&const DeepCollectionEquality().equals(other._orders, _orders)&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _KdsState&&const DeepCollectionEquality().equals(other._orders, _orders)&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.isLabelAttached, isLabelAttached) || other.isLabelAttached == isLabelAttached)&&(identical(other.isCalibrating, isCalibrating) || other.isCalibrating == isCalibrating)&&(identical(other.manufacturingQueueLength, manufacturingQueueLength) || other.manufacturingQueueLength == manufacturingQueueLength)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_orders),isConnected,errorMessage);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_orders),isConnected,isLabelAttached,isCalibrating,manufacturingQueueLength,errorMessage);
 
 @override
 String toString() {
-  return 'KdsState(orders: $orders, isConnected: $isConnected, errorMessage: $errorMessage)';
+  return 'KdsState(orders: $orders, isConnected: $isConnected, isLabelAttached: $isLabelAttached, isCalibrating: $isCalibrating, manufacturingQueueLength: $manufacturingQueueLength, errorMessage: $errorMessage)';
 }
 
 
@@ -251,7 +257,7 @@ abstract mixin class _$KdsStateCopyWith<$Res> implements $KdsStateCopyWith<$Res>
   factory _$KdsStateCopyWith(_KdsState value, $Res Function(_KdsState) _then) = __$KdsStateCopyWithImpl;
 @override @useResult
 $Res call({
- List<Order> orders, bool isConnected, String? errorMessage
+ List<Order> orders, bool isConnected, bool isLabelAttached, bool isCalibrating, int manufacturingQueueLength, String? errorMessage
 });
 
 
@@ -268,11 +274,14 @@ class __$KdsStateCopyWithImpl<$Res>
 
 /// Create a copy of KdsState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? orders = null,Object? isConnected = null,Object? errorMessage = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? orders = null,Object? isConnected = null,Object? isLabelAttached = null,Object? isCalibrating = null,Object? manufacturingQueueLength = null,Object? errorMessage = freezed,}) {
   return _then(_KdsState(
 orders: null == orders ? _self._orders : orders // ignore: cast_nullable_to_non_nullable
 as List<Order>,isConnected: null == isConnected ? _self.isConnected : isConnected // ignore: cast_nullable_to_non_nullable
-as bool,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
+as bool,isLabelAttached: null == isLabelAttached ? _self.isLabelAttached : isLabelAttached // ignore: cast_nullable_to_non_nullable
+as bool,isCalibrating: null == isCalibrating ? _self.isCalibrating : isCalibrating // ignore: cast_nullable_to_non_nullable
+as bool,manufacturingQueueLength: null == manufacturingQueueLength ? _self.manufacturingQueueLength : manufacturingQueueLength // ignore: cast_nullable_to_non_nullable
+as int,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

@@ -1,6 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:kds/domain/entities/order/order.dart';
-import 'package:kds/domain/enums/index.dart';
+import 'package:kds/domain/entities/index.dart';
 
 part 'order_raw.freezed.dart';
 part 'order_raw.g.dart';
@@ -11,8 +10,12 @@ abstract class OrderRaw with _$OrderRaw {
 
   const factory OrderRaw({
     @Default('') String orderNo,
-    @Default('') String menuName,
-    @Default(OrderStatus.pending) OrderStatus status,
+    @Default('') String rawOrderId,
+    String? nickname,
+    @Default([]) List<String> menuNames,
+    @Default(0) int drinkCount,
+    @Default(0) int foodCount,
+    @Default(0) int bottleCount,
   }) = _OrderRaw;
 
   factory OrderRaw.fromJson(Map<String, dynamic> json) =>
@@ -21,8 +24,12 @@ abstract class OrderRaw with _$OrderRaw {
   Order toEntity() {
     return Order(
       orderNo: orderNo,
-      menuName: menuName,
-      status: status,
+      rawOrderId: rawOrderId,
+      nickname: nickname,
+      drinkCount: drinkCount,
+      foodCount: foodCount,
+      bottleCount: bottleCount,
+      items: menuNames.map((name) => SubItem.initial(name)).toList(),
     );
   }
 }

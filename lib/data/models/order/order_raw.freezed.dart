@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$OrderRaw {
 
- String get orderNo; String get menuName; OrderStatus get status;
+ String get orderNo; String get rawOrderId; String? get nickname; List<String> get menuNames; int get drinkCount; int get foodCount; int get bottleCount;
 /// Create a copy of OrderRaw
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $OrderRawCopyWith<OrderRaw> get copyWith => _$OrderRawCopyWithImpl<OrderRaw>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is OrderRaw&&(identical(other.orderNo, orderNo) || other.orderNo == orderNo)&&(identical(other.menuName, menuName) || other.menuName == menuName)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OrderRaw&&(identical(other.orderNo, orderNo) || other.orderNo == orderNo)&&(identical(other.rawOrderId, rawOrderId) || other.rawOrderId == rawOrderId)&&(identical(other.nickname, nickname) || other.nickname == nickname)&&const DeepCollectionEquality().equals(other.menuNames, menuNames)&&(identical(other.drinkCount, drinkCount) || other.drinkCount == drinkCount)&&(identical(other.foodCount, foodCount) || other.foodCount == foodCount)&&(identical(other.bottleCount, bottleCount) || other.bottleCount == bottleCount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,orderNo,menuName,status);
+int get hashCode => Object.hash(runtimeType,orderNo,rawOrderId,nickname,const DeepCollectionEquality().hash(menuNames),drinkCount,foodCount,bottleCount);
 
 @override
 String toString() {
-  return 'OrderRaw(orderNo: $orderNo, menuName: $menuName, status: $status)';
+  return 'OrderRaw(orderNo: $orderNo, rawOrderId: $rawOrderId, nickname: $nickname, menuNames: $menuNames, drinkCount: $drinkCount, foodCount: $foodCount, bottleCount: $bottleCount)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $OrderRawCopyWith<$Res>  {
   factory $OrderRawCopyWith(OrderRaw value, $Res Function(OrderRaw) _then) = _$OrderRawCopyWithImpl;
 @useResult
 $Res call({
- String orderNo, String menuName, OrderStatus status
+ String orderNo, String rawOrderId, String? nickname, List<String> menuNames, int drinkCount, int foodCount, int bottleCount
 });
 
 
@@ -65,12 +65,16 @@ class _$OrderRawCopyWithImpl<$Res>
 
 /// Create a copy of OrderRaw
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? orderNo = null,Object? menuName = null,Object? status = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? orderNo = null,Object? rawOrderId = null,Object? nickname = freezed,Object? menuNames = null,Object? drinkCount = null,Object? foodCount = null,Object? bottleCount = null,}) {
   return _then(_self.copyWith(
 orderNo: null == orderNo ? _self.orderNo : orderNo // ignore: cast_nullable_to_non_nullable
-as String,menuName: null == menuName ? _self.menuName : menuName // ignore: cast_nullable_to_non_nullable
-as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as OrderStatus,
+as String,rawOrderId: null == rawOrderId ? _self.rawOrderId : rawOrderId // ignore: cast_nullable_to_non_nullable
+as String,nickname: freezed == nickname ? _self.nickname : nickname // ignore: cast_nullable_to_non_nullable
+as String?,menuNames: null == menuNames ? _self.menuNames : menuNames // ignore: cast_nullable_to_non_nullable
+as List<String>,drinkCount: null == drinkCount ? _self.drinkCount : drinkCount // ignore: cast_nullable_to_non_nullable
+as int,foodCount: null == foodCount ? _self.foodCount : foodCount // ignore: cast_nullable_to_non_nullable
+as int,bottleCount: null == bottleCount ? _self.bottleCount : bottleCount // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 
@@ -155,10 +159,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String orderNo,  String menuName,  OrderStatus status)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String orderNo,  String rawOrderId,  String? nickname,  List<String> menuNames,  int drinkCount,  int foodCount,  int bottleCount)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OrderRaw() when $default != null:
-return $default(_that.orderNo,_that.menuName,_that.status);case _:
+return $default(_that.orderNo,_that.rawOrderId,_that.nickname,_that.menuNames,_that.drinkCount,_that.foodCount,_that.bottleCount);case _:
   return orElse();
 
 }
@@ -176,10 +180,10 @@ return $default(_that.orderNo,_that.menuName,_that.status);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String orderNo,  String menuName,  OrderStatus status)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String orderNo,  String rawOrderId,  String? nickname,  List<String> menuNames,  int drinkCount,  int foodCount,  int bottleCount)  $default,) {final _that = this;
 switch (_that) {
 case _OrderRaw():
-return $default(_that.orderNo,_that.menuName,_that.status);case _:
+return $default(_that.orderNo,_that.rawOrderId,_that.nickname,_that.menuNames,_that.drinkCount,_that.foodCount,_that.bottleCount);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -196,10 +200,10 @@ return $default(_that.orderNo,_that.menuName,_that.status);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String orderNo,  String menuName,  OrderStatus status)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String orderNo,  String rawOrderId,  String? nickname,  List<String> menuNames,  int drinkCount,  int foodCount,  int bottleCount)?  $default,) {final _that = this;
 switch (_that) {
 case _OrderRaw() when $default != null:
-return $default(_that.orderNo,_that.menuName,_that.status);case _:
+return $default(_that.orderNo,_that.rawOrderId,_that.nickname,_that.menuNames,_that.drinkCount,_that.foodCount,_that.bottleCount);case _:
   return null;
 
 }
@@ -211,12 +215,22 @@ return $default(_that.orderNo,_that.menuName,_that.status);case _:
 @JsonSerializable()
 
 class _OrderRaw extends OrderRaw {
-  const _OrderRaw({this.orderNo = '', this.menuName = '', this.status = OrderStatus.pending}): super._();
+  const _OrderRaw({this.orderNo = '', this.rawOrderId = '', this.nickname, final  List<String> menuNames = const [], this.drinkCount = 0, this.foodCount = 0, this.bottleCount = 0}): _menuNames = menuNames,super._();
   factory _OrderRaw.fromJson(Map<String, dynamic> json) => _$OrderRawFromJson(json);
 
 @override@JsonKey() final  String orderNo;
-@override@JsonKey() final  String menuName;
-@override@JsonKey() final  OrderStatus status;
+@override@JsonKey() final  String rawOrderId;
+@override final  String? nickname;
+ final  List<String> _menuNames;
+@override@JsonKey() List<String> get menuNames {
+  if (_menuNames is EqualUnmodifiableListView) return _menuNames;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_menuNames);
+}
+
+@override@JsonKey() final  int drinkCount;
+@override@JsonKey() final  int foodCount;
+@override@JsonKey() final  int bottleCount;
 
 /// Create a copy of OrderRaw
 /// with the given fields replaced by the non-null parameter values.
@@ -231,16 +245,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OrderRaw&&(identical(other.orderNo, orderNo) || other.orderNo == orderNo)&&(identical(other.menuName, menuName) || other.menuName == menuName)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OrderRaw&&(identical(other.orderNo, orderNo) || other.orderNo == orderNo)&&(identical(other.rawOrderId, rawOrderId) || other.rawOrderId == rawOrderId)&&(identical(other.nickname, nickname) || other.nickname == nickname)&&const DeepCollectionEquality().equals(other._menuNames, _menuNames)&&(identical(other.drinkCount, drinkCount) || other.drinkCount == drinkCount)&&(identical(other.foodCount, foodCount) || other.foodCount == foodCount)&&(identical(other.bottleCount, bottleCount) || other.bottleCount == bottleCount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,orderNo,menuName,status);
+int get hashCode => Object.hash(runtimeType,orderNo,rawOrderId,nickname,const DeepCollectionEquality().hash(_menuNames),drinkCount,foodCount,bottleCount);
 
 @override
 String toString() {
-  return 'OrderRaw(orderNo: $orderNo, menuName: $menuName, status: $status)';
+  return 'OrderRaw(orderNo: $orderNo, rawOrderId: $rawOrderId, nickname: $nickname, menuNames: $menuNames, drinkCount: $drinkCount, foodCount: $foodCount, bottleCount: $bottleCount)';
 }
 
 
@@ -251,7 +265,7 @@ abstract mixin class _$OrderRawCopyWith<$Res> implements $OrderRawCopyWith<$Res>
   factory _$OrderRawCopyWith(_OrderRaw value, $Res Function(_OrderRaw) _then) = __$OrderRawCopyWithImpl;
 @override @useResult
 $Res call({
- String orderNo, String menuName, OrderStatus status
+ String orderNo, String rawOrderId, String? nickname, List<String> menuNames, int drinkCount, int foodCount, int bottleCount
 });
 
 
@@ -268,12 +282,16 @@ class __$OrderRawCopyWithImpl<$Res>
 
 /// Create a copy of OrderRaw
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? orderNo = null,Object? menuName = null,Object? status = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? orderNo = null,Object? rawOrderId = null,Object? nickname = freezed,Object? menuNames = null,Object? drinkCount = null,Object? foodCount = null,Object? bottleCount = null,}) {
   return _then(_OrderRaw(
 orderNo: null == orderNo ? _self.orderNo : orderNo // ignore: cast_nullable_to_non_nullable
-as String,menuName: null == menuName ? _self.menuName : menuName // ignore: cast_nullable_to_non_nullable
-as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as OrderStatus,
+as String,rawOrderId: null == rawOrderId ? _self.rawOrderId : rawOrderId // ignore: cast_nullable_to_non_nullable
+as String,nickname: freezed == nickname ? _self.nickname : nickname // ignore: cast_nullable_to_non_nullable
+as String?,menuNames: null == menuNames ? _self._menuNames : menuNames // ignore: cast_nullable_to_non_nullable
+as List<String>,drinkCount: null == drinkCount ? _self.drinkCount : drinkCount // ignore: cast_nullable_to_non_nullable
+as int,foodCount: null == foodCount ? _self.foodCount : foodCount // ignore: cast_nullable_to_non_nullable
+as int,bottleCount: null == bottleCount ? _self.bottleCount : bottleCount // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 
