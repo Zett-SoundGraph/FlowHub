@@ -41,9 +41,9 @@ class RecipeDataSource implements IRecipeDataSource {
           dispenserData: _parseDispenserData(row.length > 11 ? row[11].toString().trim() : ''),
         );
       }
-    } catch (e) {
-      // keep _recipeMap empty on load failure
-    }
+} catch (e) {
+  Log.e('RecipeDataSource', 'Failed to load assets/data/recipe.csv: $e');
+}
   }
 
   @override
