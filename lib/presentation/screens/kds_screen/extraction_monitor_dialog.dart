@@ -20,7 +20,8 @@ class ExtractionMonitorDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<KdsCubit, KdsState>(
       builder: (context, state) {
-        final order = state.orders.where((o) => o.orderNo == orderNo).firstOrNull;
+final matches = state.orders.where((o) => o.orderNo == orderNo);
+final order = matches.isNotEmpty ? matches.first : null;
         final subItem = (order != null && subItemIndex < order.items.length)
             ? order.items[subItemIndex]
             : null;
