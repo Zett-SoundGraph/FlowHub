@@ -150,10 +150,11 @@ class KdsCubit extends Cubit<KdsState> {
   }
 
   /// Updates calibration state from the calibration status stream.
-  void _handleCalibrationStatus(String status) {
-    emit(state.copyWith(isCalibrating: true));
-    Log.d('Calibration', 'Status: $status');
-  }
+void _handleCalibrationStatus(String status) {
+  final calibrating = status == 'VALIDATION_MODE';
+  emit(state.copyWith(isCalibrating: calibrating));
+  Log.d('Calibration', 'Status: $status');
+}
 
   /// Applies [updater] to the sub-item at [subItemIndex] within the order matching [orderNo].
   /// Optionally prepends [extraLog] to the sub-item's log list if not already the latest entry.
