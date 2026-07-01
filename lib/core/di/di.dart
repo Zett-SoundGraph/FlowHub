@@ -1,13 +1,14 @@
 import 'package:dio/dio.dart';
-import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'package:kds/core/constants/index.dart';
 import 'package:kds/core/di/di.config.dart';
+import 'package:kds/core/di/service_locator.dart';
 import 'package:kds/core/env/env.dart';
 import 'package:kds/data/network/common_interceptor.dart';
 import 'package:kds/data/network/rest_client.dart';
+import 'package:kds/domain/repositories/recipe_repository.dart';
 
-final getIt = GetIt.asNewInstance()..allowReassignment = true;
+export 'package:kds/core/di/service_locator.dart';
 
 @InjectableInit(
   initializerName: r'$initGetIt',
@@ -28,7 +29,9 @@ Future<void> setupLocator(Env env) async {
     ..followRedirects = false;
 
   getIt.registerSingleton(() => dio);
-
   getIt.registerSingleton(() => RestClient(dio, baseUrl: env.apiUrl));
   $initGetIt(getIt);
+
+  // RecipeRepository is a singleton — load CSV data during DI initialization.
+  await getIt<RecipeRepository>().load();
 }
