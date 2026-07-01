@@ -80,7 +80,7 @@ class CayeManagementScreen extends StatelessWidget {
                     onTap: () {
                       cubit.sendTodayExtractionHistory(machineIp);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('오늘치 기록 요청. Logcat을 확인하세요.')),
+                        const SnackBar(content: Text('Today extraction history requested. Check Logcat.')),
                       );
                     },
                   ),

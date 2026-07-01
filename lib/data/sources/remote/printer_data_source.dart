@@ -1,13 +1,17 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:injectable/injectable.dart' hide Order;
+import 'package:kds/core/utils/log.dart';
 
-// Top-level isolate function: PNG bytes → ESC/POS raster bytes
+/// Converts raw PNG bytes into ESC/POS raster byte sequence.
+/// 1. Decode PNG into an image object
+/// 2. Build ESC/POS header (initialize, line-spacing, raster header)
+/// 3. Walk each pixel row and pack bits into bytes
+/// 4. Append footer (restore line spacing, feed)
 List<int> encodeImageToEscPos(Uint8List pngBytes) {
   final img.Image? src = img.decodeImage(pngBytes);
   if (src == null) return [];
@@ -56,7 +60,8 @@ List<int> encodeImageToEscPos(Uint8List pngBytes) {
 }
 
 abstract interface class IPrinterDataSource {
-  Stream<bool> get statusStream; // true = ATTACHED, false = DETACHED
+  /// Emits true when a label printer is attached, false when detached.
+  Stream<bool> get statusStream;
   Future<void> printLabel(Uint8List pngBytes);
   Future<void> printTest(List<String> menus);
   void dispose();
@@ -64,6 +69,7 @@ abstract interface class IPrinterDataSource {
 
 @Singleton(as: IPrinterDataSource)
 class PrinterDataSource implements IPrinterDataSource {
+  static const _tag = 'Printer';
   static const _statusChannel = EventChannel('com.sg.kds/printer_status');
   static const _actionChannel = MethodChannel('com.sg.kds/printer_action');
 
@@ -74,15 +80,19 @@ class PrinterDataSource implements IPrinterDataSource {
     _listenToStatusChannel();
   }
 
+  /// Subscribes to the native printer status EventChannel.
+  /// 1. Listen for ATTACHED / DETACHED string events
+  /// 2. Forward boolean value to [_statusController]
+  /// 3. Propagate channel errors downstream
   void _listenToStatusChannel() {
     _statusSubscription = _statusChannel.receiveBroadcastStream().listen(
       (event) {
         final bool attached = event == 'ATTACHED';
-        debugPrint('[Printer] 상태: $event');
+        Log.d(_tag, 'Status: $event');
         _statusController.add(attached);
       },
       onError: (error) {
-        debugPrint('[Printer] ❌ 채널 오류: $error');
+        Log.e(_tag, 'Channel error: $error');
         _statusController.addError(error);
       },
     );
@@ -91,26 +101,30 @@ class PrinterDataSource implements IPrinterDataSource {
   @override
   Stream<bool> get statusStream => _statusController.stream;
 
+  /// Encodes [pngBytes] to ESC/POS raster format and sends to native printer.
+  /// 1. Run [encodeImageToEscPos] on a background isolate via [compute]
+  /// 2. Invoke native 'printImageLabel' method with the encoded bytes
   @override
   Future<void> printLabel(Uint8List pngBytes) async {
     final totalWatch = Stopwatch()..start();
 
     final step23 = Stopwatch()..start();
     final List<int> bytes = await compute(encodeImageToEscPos, pngBytes);
-    debugPrint('[Printer] ⏱️ 래스터 변환: ${step23.elapsedMilliseconds}ms');
+    Log.d(_tag, 'Raster encoding: ${step23.elapsedMilliseconds}ms');
 
     final step4 = Stopwatch()..start();
     await _actionChannel.invokeMethod('printImageLabel', Uint8List.fromList(bytes));
-    debugPrint('[Printer] ⏱️ 네이티브 전송: ${step4.elapsedMilliseconds}ms');
-    log('[Printer] 🏁 총 소요: ${totalWatch.elapsedMilliseconds}ms');
+    Log.d(_tag, 'Native transfer: ${step4.elapsedMilliseconds}ms');
+    Log.i(_tag, 'Total elapsed: ${totalWatch.elapsedMilliseconds}ms');
   }
 
+  /// Sends a test label with the given [menus] to the native printer channel.
   @override
   Future<void> printTest(List<String> menus) async {
     try {
       await _actionChannel.invokeMethod('printTestLabel', menus);
     } on PlatformException catch (e) {
-      debugPrint('[Printer] ❌ 텍스트 인쇄 에러: ${e.message}');
+      Log.e(_tag, 'Text print error: ${e.message}');
     }
   }
 

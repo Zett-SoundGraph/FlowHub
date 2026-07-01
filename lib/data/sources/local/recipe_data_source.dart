@@ -41,7 +41,7 @@ class RecipeDataSource implements IRecipeDataSource {
         );
       }
     } catch (e) {
-      // 로드 실패 시 빈 맵으로 유지
+      // keep _recipeMap empty on load failure
     }
   }
 

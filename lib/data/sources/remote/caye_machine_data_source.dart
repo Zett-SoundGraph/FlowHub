@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:encrypt/encrypt.dart' as enc;
 import 'package:injectable/injectable.dart' hide Order;
+import 'package:kds/core/utils/log.dart';
 import 'package:kds/domain/entities/index.dart';
 
 abstract interface class ICayeMachineDataSource {
@@ -27,6 +27,7 @@ abstract interface class ICayeMachineDataSource {
 
 @Singleton(as: ICayeMachineDataSource)
 class CayeMachineDataSource implements ICayeMachineDataSource {
+  static const String _tag = 'Caye';
   static const String _hexKey = '734B09645723794F14B817BB6218D14E';
 
   Socket? _socket;
@@ -43,19 +44,13 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
   @override
   Stream<bool> get connectionStream => _connectionController.stream;
 
-  void _log(String message) {
-    if (message.length > 800) {
-      for (int s = 0; s < message.length; s += 800) {
-        log('[Caye] ${message.substring(s, (s + 800).clamp(0, message.length))}');
-      }
-    } else {
-      log('[Caye] $message');
-    }
-  }
-
+  /// Encrypts a function code + body map into AES-CBC bytes with an 8-byte timestamp prefix.
+  /// 1. Build 8-byte big-endian timestamp
+  /// 2. Concatenate timestamp with JSON-encoded body (or timestamp only if body is empty)
+  /// 3. Encrypt using AES-128-CBC with zero IV and PKCS7 padding
   Uint8List _encryptPayload(int functionCode, Map<String, dynamic> body) {
     final key = enc.Key.fromBase16(_hexKey);
-    final iv = enc.IV(Uint8List(16)); // zero IV (CBC)
+    final iv = enc.IV(Uint8List(16));
     final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc, padding: 'PKCS7'));
 
     final ByteData tsData = ByteData(8);
@@ -69,6 +64,8 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
     return encrypter.encryptBytes(payload, iv: iv).bytes;
   }
 
+  /// Decrypts an AES-CBC encrypted payload and returns the JSON string after the 8-byte timestamp.
+  /// Returns null if decryption fails or the decrypted length is too short to contain JSON.
   String? _decryptPayload(Uint8List encryptedData) {
     try {
       final key = enc.Key.fromBase16(_hexKey);
@@ -78,22 +75,28 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
       if (decrypted.length <= 8) return null;
       return utf8.decode(decrypted.sublist(8));
     } catch (e) {
-      _log('❌ 복호화 실패: $e');
+      Log.e(_tag, 'Decryption failed: $e');
       return null;
     }
   }
 
+  /// Computes an XOR checksum over all bytes in [data].
   int _checksum(Uint8List data) {
     int cs = 0;
     for (final b in data) { cs ^= b; }
     return cs & 0xFF;
   }
 
+  /// Opens a TCP connection to [ip]:31255 if not already connected, then sends a framed packet.
+  /// 1. Connect socket on first call and start a heartbeat timer
+  /// 2. Encrypt [body] with [functionCode] using [_encryptPayload]
+  /// 3. Build packet: [0xCC, 0xAA, funcCode, 0x01, 0x01, lenHi, lenLo, ...encrypted, checksum, 0xFF, 0xEE]
+  /// 4. Write packet bytes to the socket
   Future<void> _sendPacket(String ip, int functionCode, Map<String, dynamic> body) async {
     const int port = 31255;
     try {
       if (_socket == null) {
-        _log('🌐 접속 시도 ($ip:$port)');
+        Log.d(_tag, 'Connecting to $ip:$port');
         _socket = await Socket.connect(ip, port, timeout: const Duration(seconds: 5));
         _connectionController.add(true);
         _socket!.listen(
@@ -116,13 +119,18 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
         ..add([0xFF, 0xEE]);
 
       _socket!.add(builder.toBytes());
-      _log('📡 [Sent] 0x${functionCode.toRadixString(16)} | $body');
+      Log.d(_tag, '[Sent] 0x${functionCode.toRadixString(16)} | $body');
     } catch (e) {
-      _log('❌ 전송 에러: $e');
+      Log.e(_tag, 'Send error: $e');
       _handleDisconnect();
     }
   }
 
+  /// Parses an incoming TCP packet, decrypts the body, and emits an [ExtractionProgress] event.
+  /// 1. Validate minimum packet length
+  /// 2. Extract function code and encrypted body slice
+  /// 3. Decrypt and decode JSON
+  /// 4. Emit [ExtractionProgress] for known function codes (0x20, 0x22, 0x23, 0x24, 0x35)
   void _handleIncoming(Uint8List data) {
     if (data.length < 13) return;
     final int functionCode = data[2];
@@ -133,12 +141,13 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
     if (json != null) {
       final decoded = jsonDecode(json) as Map<String, dynamic>;
       if (const {0x20, 0x22, 0x23, 0x24, 0x35}.contains(functionCode)) {
-        _progressController.add(ExtractionProgress(functionCode, decoded));
+        _progressController.add(ExtractionProgress(code: functionCode, data: decoded));
       }
-      _log('📥 [Decrypted] 0x${functionCode.toRadixString(16)} | $json');
+      Log.long(_tag, '[Received] 0x${functionCode.toRadixString(16)} | $json');
     }
   }
 
+  /// Starts a 1-minute periodic timer that sends a time-sync command to keep the connection alive.
   void _startHeartbeat(String ip) {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = Timer.periodic(const Duration(minutes: 1), (_) {
@@ -146,12 +155,13 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
     });
   }
 
+  /// Destroys the TCP socket, cancels the heartbeat, and emits disconnected state.
   void _handleDisconnect() {
     _socket?.destroy();
     _socket = null;
     _heartbeatTimer?.cancel();
     _connectionController.add(false);
-    _log('🔌 연결 종료');
+    Log.d(_tag, 'Connection closed');
   }
 
   @override
@@ -189,6 +199,7 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
   Future<void> sendTodayExtractionHistory(String ip) =>
       _sendPacket(ip, 0x35, {});
 
+  /// Closes the socket connection and all stream controllers.
   @override
   void dispose() {
     _handleDisconnect();

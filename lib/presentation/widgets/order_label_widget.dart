@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:kds/core/theme/app_theme.dart';
 import 'package:kds/domain/entities/menu_recipe/menu_recipe.dart';
+import 'package:kds/presentation/widgets/dashed_line_widget.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-class OrderLabelWidget extends StatelessWidget {
+/// Props data class for [OrderLabelWidget].
+/// Encapsulates all data required to render a printed order label.
+class OrderLabelWidgetProps {
   final String orderNo;
   final String sequence;
   final String totalSequence;
@@ -11,8 +15,7 @@ class OrderLabelWidget extends StatelessWidget {
   final MenuRecipe? recipe;
   final String dispenserData;
 
-  const OrderLabelWidget({
-    super.key,
+  const OrderLabelWidgetProps({
     required this.orderNo,
     this.sequence = '01',
     this.totalSequence = '01',
@@ -21,26 +24,16 @@ class OrderLabelWidget extends StatelessWidget {
     this.recipe,
     this.dispenserData = 'N:0',
   });
+}
+
+/// Renders a 384px-wide thermal printer label for a single order item.
+class OrderLabelWidget extends StatelessWidget {
+  final OrderLabelWidgetProps props;
+
+  const OrderLabelWidget({super.key, required this.props});
 
   @override
   Widget build(BuildContext context) {
-    const TextStyle productStyle = TextStyle(
-      fontFamily: 'JetBrainsMono',
-      fontWeight: FontWeight.w400,
-      fontSize: 24.0,
-      height: 1.1,
-      letterSpacing: -0.5,
-      color: Colors.black,
-    );
-    const TextStyle footerStyle = TextStyle(
-      fontFamily: 'JetBrainsMono',
-      fontWeight: FontWeight.w400,
-      fontSize: 20.0,
-      height: 1.1,
-      letterSpacing: -0.5,
-      color: Colors.black,
-    );
-
     final String currentTime = DateTime.now().toString().substring(0, 19);
 
     return Container(
@@ -51,7 +44,7 @@ class OrderLabelWidget extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 좌측: 회전된 주문번호
+            // Left column: rotated order number + sequence
             Container(
               padding: const EdgeInsets.only(left: 4.0, top: 12.0, right: 12.0),
               alignment: Alignment.topCenter,
@@ -59,19 +52,12 @@ class OrderLabelWidget extends StatelessWidget {
                 quarterTurns: 3,
                 child: RichText(
                   text: TextSpan(
-                    style: const TextStyle(
-                      fontFamily: 'JetBrainsMono',
-                      fontWeight: FontWeight.w700,
-                      fontSize: 50.0,
-                      height: 1.0,
-                      letterSpacing: -1.5,
-                      color: Colors.black,
-                    ),
+                    style: AppTextStyles.labelTitle,
                     children: [
-                      TextSpan(text: orderNo),
+                      TextSpan(text: props.orderNo),
                       TextSpan(
-                        text: '.$sequence/$totalSequence',
-                        style: const TextStyle(fontSize: 50.0, fontWeight: FontWeight.w700),
+                        text: '.${props.sequence}/${props.totalSequence}',
+                        style: AppTextStyles.labelTitle,
                       ),
                     ],
                   ),
@@ -79,74 +65,70 @@ class OrderLabelWidget extends StatelessWidget {
               ),
             ),
 
-            // 중간: 수직 점선
-            CustomPaint(
-              painter: _DashedLinePainter(),
-              size: const Size(2, double.infinity),
-            ),
+            // Center: vertical dashed divider
+            const DashedLineWidget(),
 
             const SizedBox(width: 12),
 
-            // 우측: QR + 메뉴 정보
+            // Right column: QR code + product info + footer
             Expanded(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 8),
-
                   SizedBox(
                     width: 120.0,
                     height: 120.0,
                     child: QrImageView(
-                      data: qrData.isNotEmpty ? qrData : orderNo,
+                      data: props.qrData.isNotEmpty ? props.qrData : props.orderNo,
                       size: 120.0,
                       padding: EdgeInsets.zero,
                       gapless: false,
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
                   Text(
                     '[PRODUCT]',
-                    style: productStyle.copyWith(fontWeight: FontWeight.w700),
+                    style: AppTextStyles.labelProduct.copyWith(fontWeight: FontWeight.w700),
                   ),
                   Text(
-                    menus.isNotEmpty ? menus.first : '-',
-                    style: productStyle.copyWith(fontSize: 20),
+                    props.menus.isNotEmpty ? props.menus.first : '-',
+                    style: AppTextStyles.labelProduct.copyWith(fontSize: 20),
                   ),
                   Text(
                     'Version: 0.94.0506.02',
-                    style: productStyle.copyWith(fontSize: 20),
+                    style: AppTextStyles.labelProduct.copyWith(fontSize: 20),
                   ),
-
                   const SizedBox(height: 12),
-
-                  // 레시피 옵션 (있을 때만 표시)
-                  if (recipe != null) ...[
-                    Text('[OPTION]', style: productStyle.copyWith(fontWeight: FontWeight.w700)),
-                    ...recipe!.optionLines.map(
-                      (line) => Text(line, style: productStyle.copyWith(fontSize: 20)),
+                  if (props.recipe != null) ...[
+                    Text(
+                      '[OPTION]',
+                      style: AppTextStyles.labelProduct.copyWith(fontWeight: FontWeight.w700),
                     ),
-                    // 디스펜서 추가 재료
-                    if (dispenserData.isNotEmpty && dispenserData != 'N:0') ...[
+                    ...props.recipe!.optionLines.map(
+                      (line) => Text(
+                        line,
+                        style: AppTextStyles.labelProduct.copyWith(fontSize: 20),
+                      ),
+                    ),
+                    if (props.dispenserData.isNotEmpty && props.dispenserData != 'N:0') ...[
                       () {
-                        final parts = dispenserData.split(':');
+                        final parts = props.dispenserData.split(':');
                         if (parts.length == 2) {
                           final name = parts[0].replaceAll('_', ' ').toUpperCase();
-                          return Text('- $name: ${parts[1]}g', style: productStyle.copyWith(fontSize: 20));
+                          return Text(
+                            '- $name: ${parts[1]}g',
+                            style: AppTextStyles.labelProduct.copyWith(fontSize: 20),
+                          );
                         }
                         return const SizedBox.shrink();
                       }(),
                     ],
                   ],
-
                   const SizedBox(height: 36),
-
-                  Text('ORDER TIME: $currentTime', style: footerStyle),
-                  const Text('BUILD BY CAFE.BETA OS', style: footerStyle),
-
+                  Text('ORDER TIME: $currentTime', style: AppTextStyles.labelFooter),
+                  const Text('BUILD BY CAFE.BETA OS', style: AppTextStyles.labelFooter),
                   const SizedBox(height: 8),
                 ],
               ),
@@ -156,23 +138,4 @@ class OrderLabelWidget extends StatelessWidget {
       ),
     );
   }
-}
-
-class _DashedLinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    const double dashHeight = 5.0;
-    const double dashSpace = 4.0;
-    double startY = 0.0;
-    final paint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 2.0;
-    while (startY < size.height) {
-      canvas.drawLine(Offset(0, startY), Offset(0, startY + dashHeight), paint);
-      startY += dashHeight + dashSpace;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

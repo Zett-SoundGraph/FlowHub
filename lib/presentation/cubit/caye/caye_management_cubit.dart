@@ -45,20 +45,23 @@ class CayeManagementCubit extends Cubit<CayeManagementState> {
     });
   }
 
-  Future<void> sendCancelCommand(String ip, String productKey, String orderNo) =>
-      _sendCancelCommand(ip, productKey, orderNo);
+  Future<void> sendCancelCommand(String ip, String productKey, String orderNo) async {
+    await _sendCancelCommand((ip: ip, productKey: productKey, orderNo: orderNo));
+  }
 
   Future<void> sendRinsingCommand(String ip) => _sendRinsingCommand(ip);
 
-  Future<void> sendCleaningCommand(String ip, {int mode = 0}) =>
-      _sendCleaningCommand(ip, mode: mode);
+  Future<void> sendCleaningCommand(String ip, {int mode = 0}) async {
+    await _sendCleaningCommand((ip: ip, mode: mode));
+  }
 
   Future<void> sendQueryStatus(String ip) => _sendQueryStatus(ip);
 
   Future<void> sendTimeSync(String ip) => _sendTimeSync(ip);
 
-  Future<void> sendTodayExtractionHistory(String ip) =>
-      _sendTodayExtractionHistory(ip);
+  Future<void> sendTodayExtractionHistory(String ip) async {
+    await _sendTodayExtractionHistory(ip);
+  }
 
   @override
   Future<void> close() async {

@@ -3,6 +3,16 @@ import 'package:kds/domain/entities/index.dart';
 
 part 'kds_state.freezed.dart';
 
+Order _makeMockOrder(List<String> menus, int orderNo) {
+  final no = '$orderNo';
+  return Order(
+    orderNo: no,
+    rawOrderId: 'MOCK_$no',
+    drinkCount: menus.length,
+    items: menus.map((m) => SubItem.initial(m)).toList(),
+  );
+}
+
 @freezed
 abstract class KdsState with _$KdsState {
   const factory KdsState({
@@ -16,28 +26,18 @@ abstract class KdsState with _$KdsState {
 
   factory KdsState.initial() {
     int seq = 1001;
-    Order make(List<String> menus) {
-      final no = '${seq++}';
-      return Order(
-        orderNo: no,
-        rawOrderId: 'MOCK_$no',
-        drinkCount: menus.length,
-        items: menus.map((m) => SubItem.initial(m)).toList(),
-      );
-    }
-
     return KdsState(
       orders: [
-        make(['ICED Americano']),
-        make(['ICED Cafe Latte']),
-        make(['Banana Milk Latte']),
-        make(['Espresso']),
-        make(['ICED Americano', 'ICED Cafe Latte']),
-        make(['ICED Americano', 'Banana Milk Latte']),
-        make(['ICED Cafe Latte', 'Banana Milk Latte']),
-        make(['ICED Americano', 'ICED Americano']),
-        make(['ICED Cafe Latte', 'ICED Cafe Latte']),
-        make(['ICED Americano', 'ICED Cafe Latte', 'Banana Milk Latte']),
+        _makeMockOrder(['ICED Americano'], seq++),
+        _makeMockOrder(['ICED Cafe Latte'], seq++),
+        _makeMockOrder(['Banana Milk Latte'], seq++),
+        _makeMockOrder(['Espresso'], seq++),
+        _makeMockOrder(['ICED Americano', 'ICED Cafe Latte'], seq++),
+        _makeMockOrder(['ICED Americano', 'Banana Milk Latte'], seq++),
+        _makeMockOrder(['ICED Cafe Latte', 'Banana Milk Latte'], seq++),
+        _makeMockOrder(['ICED Americano', 'ICED Americano'], seq++),
+        _makeMockOrder(['ICED Cafe Latte', 'ICED Cafe Latte'], seq++),
+        _makeMockOrder(['ICED Americano', 'ICED Cafe Latte', 'Banana Milk Latte'], seq++),
       ],
     );
   }

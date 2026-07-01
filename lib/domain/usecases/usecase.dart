@@ -1,5 +1,5 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:kds/core/di/di.dart';
+import 'package:kds/core/di/service_locator.dart';
 import 'package:kds/domain/exception/base_exception.dart';
 import 'package:kds/domain/exception/base_exception_handler.dart';
 
@@ -23,4 +23,9 @@ abstract class UseCaseSync<Type, Params> {
   }
 
   Either<BaseException, Type> call(Params params);
+}
+
+abstract class StreamUseCase<Type> {
+  const StreamUseCase();
+  Stream<Type> call();
 }

@@ -53,13 +53,13 @@ class _KdsMainScreenState extends State<KdsMainScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Text('정밀 보정 시작',
+        title: const Text('Start Calibration',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              '현재 센서 높이(mm)를 입력하세요.\n정확한 보정을 위해 필요합니다.',
+              'Enter the current sensor height (mm).\nRequired for accurate calibration.',
               style: TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 12),
@@ -71,7 +71,7 @@ class _KdsMainScreenState extends State<KdsMainScreen> {
                 filled: true,
                 fillColor: Colors.white12,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                labelText: '높이 (mm)',
+                labelText: 'Height (mm)',
                 labelStyle: const TextStyle(color: Colors.white54),
               ),
             ),
@@ -80,7 +80,7 @@ class _KdsMainScreenState extends State<KdsMainScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('취소', style: TextStyle(color: Colors.white54)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent),
@@ -89,7 +89,7 @@ class _KdsMainScreenState extends State<KdsMainScreen> {
               Navigator.pop(context);
               _cubit.startCalibration(height);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('높이 ${height.toInt()}mm. 보정 시작!')),
+                SnackBar(content: Text('Height ${height.toInt()}mm — starting calibration!')),
               );
             },
             child: const Text('Start Calibration',
@@ -122,7 +122,7 @@ class _KdsMainScreenState extends State<KdsMainScreen> {
           final size = MediaQuery.sizeOf(context);
           final orientation = MediaQuery.orientationOf(context);
 
-          // 반응형 그리드 계산
+          // responsive grid calculation
           int crossAxisCount;
           if (size.width < 600) {
             crossAxisCount = 1;
@@ -162,7 +162,7 @@ class _KdsMainScreenState extends State<KdsMainScreen> {
                 ],
               ),
               actions: [
-                // Machine Control 버튼
+                // Machine Control button
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
                   child: OutlinedButton(
@@ -185,7 +185,7 @@ class _KdsMainScreenState extends State<KdsMainScreen> {
                         style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
-                // 정밀보정 버튼
+                // Calibration button
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                   child: OutlinedButton(
@@ -227,7 +227,7 @@ class _KdsMainScreenState extends State<KdsMainScreen> {
             ),
             body: Stack(
               children: [
-                // 주문 목록
+                // order list
                 state.orders.isEmpty
                     ? const Center(
                         child: Text('No orders in queue.',
@@ -295,7 +295,7 @@ class _KdsMainScreenState extends State<KdsMainScreen> {
                         ],
                       ),
 
-                // 보정 오버레이
+                // calibration overlay
                 if (state.isCalibrating)
                   GestureDetector(
                     onTap: () => _cubit.stopCalibration(),
@@ -322,7 +322,7 @@ class _KdsMainScreenState extends State<KdsMainScreen> {
                             const SizedBox(height: 30),
                             TextButton(
                               onPressed: () => _cubit.stopCalibration(),
-                              child: const Text('닫기',
+                              child: const Text('Close',
                                   style: TextStyle(color: Colors.white54)),
                             ),
                           ],
@@ -362,7 +362,7 @@ class _KdsMainScreenState extends State<KdsMainScreen> {
                   child: Text('No brewing commands in queue.',
                       style: TextStyle(color: Colors.white54)))
               : const Center(
-                  child: Text('제조 큐 확인 중...',
+                  child: Text('Loading queue...',
                       style: TextStyle(color: Colors.white54))),
         ),
         actions: [
@@ -438,7 +438,7 @@ class _OrderCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 헤더: 주문번호 + 인쇄 버튼
+          // header: order number + print button
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -455,14 +455,14 @@ class _OrderCard extends StatelessWidget {
                 icon: const Icon(Icons.print, color: Colors.cyanAccent, size: 28),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-                tooltip: '라벨 인쇄',
+                tooltip: 'Print label',
                 onPressed: () => onPrintOrder(order),
               ),
             ],
           ),
           const Divider(color: Colors.white24, height: 15),
 
-          // SubItem 목록
+          // sub-item list
           Expanded(
             child: ListView.builder(
               itemCount: order.items.length,
@@ -510,7 +510,7 @@ class _OrderCard extends StatelessWidget {
                             ),
                         ],
                       ),
-                      // 제조 진행 게이지 (추출 중 또는 에러) — 탭 시 상세 다이얼로그
+                      // brewing progress gauge (extracting or error) — tap to show detail dialog
                       if (subItem.isExtracting || subItem.isError)
                         Padding(
                           padding: const EdgeInsets.only(top: 6),
@@ -578,7 +578,7 @@ class _OrderCard extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // 픽업 완료 버튼
+          // pickup complete button
           SizedBox(
             width: double.infinity,
             height: 44,

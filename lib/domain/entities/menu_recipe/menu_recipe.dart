@@ -1,24 +1,22 @@
-class MenuRecipe {
-  final String productKey;
-  final String menuNameEN;
-  final String beanWeight;
-  final String espresso;
-  final String waterIce;
-  final String waterHot;
-  final String milk;
-  // CSV column[11] — e.g. "20(Banana_Syrup)" → stored as "Banana_Syrup:20"
-  final String dispenserData;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  const MenuRecipe({
-    required this.productKey,
-    required this.menuNameEN,
-    this.beanWeight = '',
-    this.espresso = '',
-    this.waterIce = '',
-    this.waterHot = '',
-    this.milk = '',
-    this.dispenserData = 'N:0',
-  });
+part 'menu_recipe.freezed.dart';
+
+@freezed
+abstract class MenuRecipe with _$MenuRecipe {
+  const MenuRecipe._();
+
+  const factory MenuRecipe({
+    required String productKey,
+    required String menuNameEN,
+    @Default('') String beanWeight,
+    @Default('') String espresso,
+    @Default('') String waterIce,
+    @Default('') String waterHot,
+    @Default('') String milk,
+    // CSV column[11] — e.g. "20(Banana_Syrup)" → stored as "Banana_Syrup:20"
+    @Default('N:0') String dispenserData,
+  }) = _MenuRecipe;
 
   bool isValid(String v) => v.isNotEmpty && v != '-';
 

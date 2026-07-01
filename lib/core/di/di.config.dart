@@ -28,31 +28,32 @@ import '../../domain/repositories/machine_repository.dart' as _i958;
 import '../../domain/repositories/order_repository.dart' as _i507;
 import '../../domain/repositories/printer_repository.dart' as _i115;
 import '../../domain/repositories/recipe_repository.dart' as _i197;
-import '../../domain/usecases/check_machine_availability_usecase.dart' as _i201;
+import '../../domain/usecases/check_machine_availability_usecase.dart' as _i893;
 import '../../domain/usecases/complete_cooking_usecase.dart' as _i110;
 import '../../domain/usecases/complete_pickup_usecase.dart' as _i500;
 import '../../domain/usecases/connect_order_socket_usecase.dart' as _i6;
 import '../../domain/usecases/disconnect_order_socket_usecase.dart' as _i479;
-import '../../domain/usecases/dispose_machine_usecase.dart' as _i202;
-import '../../domain/usecases/dispose_printer_usecase.dart' as _i203;
+import '../../domain/usecases/dispose_machine_usecase.dart' as _i135;
+import '../../domain/usecases/dispose_printer_usecase.dart' as _i517;
 import '../../domain/usecases/get_recipe_usecase.dart' as _i510;
 import '../../domain/usecases/observe_barcode_scan_usecase.dart' as _i174;
-import '../../domain/usecases/observe_calibration_status_usecase.dart' as _i204;
-import '../../domain/usecases/observe_machine_connection_usecase.dart' as _i205;
+import '../../domain/usecases/observe_calibration_status_usecase.dart' as _i5;
+import '../../domain/usecases/observe_machine_connection_usecase.dart' as _i847;
 import '../../domain/usecases/observe_machine_progress_usecase.dart' as _i804;
 import '../../domain/usecases/observe_order_connection_usecase.dart' as _i628;
 import '../../domain/usecases/observe_pickup_complete_usecase.dart' as _i640;
 import '../../domain/usecases/observe_printer_status_usecase.dart' as _i328;
-import '../../domain/usecases/print_label_usecase.dart' as _i206;
-import '../../domain/usecases/send_cancel_command_usecase.dart' as _i207;
-import '../../domain/usecases/send_cleaning_command_usecase.dart' as _i208;
-import '../../domain/usecases/send_make_command_usecase.dart' as _i209;
-import '../../domain/usecases/send_query_status_usecase.dart' as _i210;
-import '../../domain/usecases/send_rinsing_command_usecase.dart' as _i211;
-import '../../domain/usecases/send_time_sync_usecase.dart' as _i212;
-import '../../domain/usecases/send_today_extraction_history_usecase.dart' as _i213;
+import '../../domain/usecases/print_label_usecase.dart' as _i413;
+import '../../domain/usecases/send_cancel_command_usecase.dart' as _i622;
+import '../../domain/usecases/send_cleaning_command_usecase.dart' as _i682;
+import '../../domain/usecases/send_make_command_usecase.dart' as _i1052;
+import '../../domain/usecases/send_query_status_usecase.dart' as _i460;
+import '../../domain/usecases/send_rinsing_command_usecase.dart' as _i68;
+import '../../domain/usecases/send_time_sync_usecase.dart' as _i627;
+import '../../domain/usecases/send_today_extraction_history_usecase.dart'
+    as _i281;
 import '../../domain/usecases/start_calibration_usecase.dart' as _i583;
-import '../../presentation/cubit/caye/caye_management_cubit.dart' as _i214;
+import '../../presentation/cubit/caye/caye_management_cubit.dart' as _i776;
 import '../../presentation/cubit/kds/kds_cubit.dart' as _i807;
 
 // initializes the registration of main-scope dependencies inside of GetIt
@@ -63,6 +64,9 @@ _i174.GetIt $initGetIt(
 }) {
   final gh = _i526.GetItHelper(getIt, environment, environmentFilter);
   gh.singleton<_i919.IKdsSocketDataSource>(() => _i919.KdsSocketDataSource());
+  gh.singleton<_i507.OrderRepository>(
+    () => _i717.OrderRepositoryImpl(gh<_i919.IKdsSocketDataSource>()),
+  );
   gh.factory<_i543.BaseExceptionHandler>(() => _i3.CommonExceptionHandler());
   gh.singleton<_i422.ICayeMachineDataSource>(
     () => _i422.CayeMachineDataSource(),
@@ -78,11 +82,36 @@ _i174.GetIt $initGetIt(
   gh.factory<_i804.ObserveMachineProgressUseCase>(
     () => _i804.ObserveMachineProgressUseCase(gh<_i958.MachineRepository>()),
   );
-  gh.singleton<_i507.OrderRepository>(
-    () => _i717.OrderRepositoryImpl(
-      gh<_i919.IKdsSocketDataSource>(),
-      // gh<_i792.IBarcodeScanDataSource>(), // WebSocket 방식으로 대체됨
-    ),
+  gh.factory<_i893.CheckMachineAvailabilityUseCase>(
+    () => _i893.CheckMachineAvailabilityUseCase(gh<_i958.MachineRepository>()),
+  );
+  gh.factory<_i135.DisposeMachineUseCase>(
+    () => _i135.DisposeMachineUseCase(gh<_i958.MachineRepository>()),
+  );
+  gh.factory<_i847.ObserveMachineConnectionUseCase>(
+    () => _i847.ObserveMachineConnectionUseCase(gh<_i958.MachineRepository>()),
+  );
+  gh.factory<_i622.SendCancelCommandUseCase>(
+    () => _i622.SendCancelCommandUseCase(gh<_i958.MachineRepository>()),
+  );
+  gh.factory<_i682.SendCleaningCommandUseCase>(
+    () => _i682.SendCleaningCommandUseCase(gh<_i958.MachineRepository>()),
+  );
+  gh.factory<_i1052.SendMakeCommandUseCase>(
+    () => _i1052.SendMakeCommandUseCase(gh<_i958.MachineRepository>()),
+  );
+  gh.factory<_i460.SendQueryStatusUseCase>(
+    () => _i460.SendQueryStatusUseCase(gh<_i958.MachineRepository>()),
+  );
+  gh.factory<_i68.SendRinsingCommandUseCase>(
+    () => _i68.SendRinsingCommandUseCase(gh<_i958.MachineRepository>()),
+  );
+  gh.factory<_i627.SendTimeSyncUseCase>(
+    () => _i627.SendTimeSyncUseCase(gh<_i958.MachineRepository>()),
+  );
+  gh.factory<_i281.SendTodayExtractionHistoryUseCase>(
+    () =>
+        _i281.SendTodayExtractionHistoryUseCase(gh<_i958.MachineRepository>()),
   );
   gh.factory<_i6.ConnectOrderSocketUseCase>(
     () => _i6.ConnectOrderSocketUseCase(gh<_i507.OrderRepository>()),
@@ -105,6 +134,9 @@ _i174.GetIt $initGetIt(
   gh.factory<_i174.ObserveBarcodeScanUseCase>(
     () => _i174.ObserveBarcodeScanUseCase(gh<_i507.OrderRepository>()),
   );
+  gh.factory<_i5.ObserveCalibrationStatusUseCase>(
+    () => _i5.ObserveCalibrationStatusUseCase(gh<_i507.OrderRepository>()),
+  );
   gh.factory<_i640.ObservePickupCompleteUseCase>(
     () => _i640.ObservePickupCompleteUseCase(gh<_i507.OrderRepository>()),
   );
@@ -114,65 +146,28 @@ _i174.GetIt $initGetIt(
   gh.factory<_i500.CompletePickupUseCase>(
     () => _i500.CompletePickupUseCase(gh<_i445.OrderRepository>()),
   );
+  gh.factory<_i517.DisposePrinterUseCase>(
+    () => _i517.DisposePrinterUseCase(gh<_i115.PrinterRepository>()),
+  );
+  gh.factory<_i413.PrintLabelUseCase>(
+    () => _i413.PrintLabelUseCase(gh<_i115.PrinterRepository>()),
+  );
   gh.factory<_i328.ObservePrinterStatusUseCase>(
     () => _i328.ObservePrinterStatusUseCase(gh<_i115.PrinterRepository>()),
   );
+  gh.factory<_i776.CayeManagementCubit>(
+    () => _i776.CayeManagementCubit(
+      observeMachineConnection: gh<_i847.ObserveMachineConnectionUseCase>(),
+      sendCancelCommand: gh<_i622.SendCancelCommandUseCase>(),
+      sendRinsingCommand: gh<_i68.SendRinsingCommandUseCase>(),
+      sendCleaningCommand: gh<_i682.SendCleaningCommandUseCase>(),
+      sendQueryStatus: gh<_i460.SendQueryStatusUseCase>(),
+      sendTimeSync: gh<_i627.SendTimeSyncUseCase>(),
+      sendTodayExtractionHistory: gh<_i281.SendTodayExtractionHistoryUseCase>(),
+    ),
+  );
   gh.factory<_i510.GetRecipeUseCase>(
     () => _i510.GetRecipeUseCase(gh<_i197.RecipeRepository>()),
-  );
-  // MachineRepository-based UseCases
-  gh.factory<_i201.CheckMachineAvailabilityUseCase>(
-    () => _i201.CheckMachineAvailabilityUseCase(gh<_i958.MachineRepository>()),
-  );
-  gh.factory<_i209.SendMakeCommandUseCase>(
-    () => _i209.SendMakeCommandUseCase(gh<_i958.MachineRepository>()),
-  );
-  gh.factory<_i207.SendCancelCommandUseCase>(
-    () => _i207.SendCancelCommandUseCase(gh<_i958.MachineRepository>()),
-  );
-  gh.factory<_i211.SendRinsingCommandUseCase>(
-    () => _i211.SendRinsingCommandUseCase(gh<_i958.MachineRepository>()),
-  );
-  gh.factory<_i208.SendCleaningCommandUseCase>(
-    () => _i208.SendCleaningCommandUseCase(gh<_i958.MachineRepository>()),
-  );
-  gh.factory<_i210.SendQueryStatusUseCase>(
-    () => _i210.SendQueryStatusUseCase(gh<_i958.MachineRepository>()),
-  );
-  gh.factory<_i212.SendTimeSyncUseCase>(
-    () => _i212.SendTimeSyncUseCase(gh<_i958.MachineRepository>()),
-  );
-  gh.factory<_i213.SendTodayExtractionHistoryUseCase>(
-    () => _i213.SendTodayExtractionHistoryUseCase(gh<_i958.MachineRepository>()),
-  );
-  gh.factory<_i205.ObserveMachineConnectionUseCase>(
-    () => _i205.ObserveMachineConnectionUseCase(gh<_i958.MachineRepository>()),
-  );
-  gh.factory<_i202.DisposeMachineUseCase>(
-    () => _i202.DisposeMachineUseCase(gh<_i958.MachineRepository>()),
-  );
-  // PrinterRepository-based UseCases
-  gh.factory<_i206.PrintLabelUseCase>(
-    () => _i206.PrintLabelUseCase(gh<_i115.PrinterRepository>()),
-  );
-  gh.factory<_i203.DisposePrinterUseCase>(
-    () => _i203.DisposePrinterUseCase(gh<_i115.PrinterRepository>()),
-  );
-  // OrderRepository-based UseCases
-  gh.factory<_i204.ObserveCalibrationStatusUseCase>(
-    () => _i204.ObserveCalibrationStatusUseCase(gh<_i507.OrderRepository>()),
-  );
-  // CayeManagementCubit
-  gh.factory<_i214.CayeManagementCubit>(
-    () => _i214.CayeManagementCubit(
-      observeMachineConnection: gh<_i205.ObserveMachineConnectionUseCase>(),
-      sendCancelCommand: gh<_i207.SendCancelCommandUseCase>(),
-      sendRinsingCommand: gh<_i211.SendRinsingCommandUseCase>(),
-      sendCleaningCommand: gh<_i208.SendCleaningCommandUseCase>(),
-      sendQueryStatus: gh<_i210.SendQueryStatusUseCase>(),
-      sendTimeSync: gh<_i212.SendTimeSyncUseCase>(),
-      sendTodayExtractionHistory: gh<_i213.SendTodayExtractionHistoryUseCase>(),
-    ),
   );
   gh.factory<_i807.KdsCubit>(
     () => _i807.KdsCubit(
@@ -184,16 +179,16 @@ _i174.GetIt $initGetIt(
       observeBarcodeScan: gh<_i174.ObserveBarcodeScanUseCase>(),
       observePickupComplete: gh<_i640.ObservePickupCompleteUseCase>(),
       observeMachineProgress: gh<_i804.ObserveMachineProgressUseCase>(),
-      checkMachineAvailability: gh<_i201.CheckMachineAvailabilityUseCase>(),
-      sendMakeCommand: gh<_i209.SendMakeCommandUseCase>(),
-      sendCancelCommand: gh<_i207.SendCancelCommandUseCase>(),
+      checkMachineAvailability: gh<_i893.CheckMachineAvailabilityUseCase>(),
+      sendMakeCommand: gh<_i1052.SendMakeCommandUseCase>(),
+      sendCancelCommand: gh<_i622.SendCancelCommandUseCase>(),
       observePrinterStatus: gh<_i328.ObservePrinterStatusUseCase>(),
-      printLabel: gh<_i206.PrintLabelUseCase>(),
+      printLabel: gh<_i413.PrintLabelUseCase>(),
       startCalibration: gh<_i583.StartCalibrationUseCase>(),
       getRecipe: gh<_i510.GetRecipeUseCase>(),
-      observeCalibrationStatus: gh<_i204.ObserveCalibrationStatusUseCase>(),
-      disposeMachine: gh<_i202.DisposeMachineUseCase>(),
-      disposePrinter: gh<_i203.DisposePrinterUseCase>(),
+      observeCalibrationStatus: gh<_i5.ObserveCalibrationStatusUseCase>(),
+      disposeMachine: gh<_i135.DisposeMachineUseCase>(),
+      disposePrinter: gh<_i517.DisposePrinterUseCase>(),
     ),
   );
   return getIt;

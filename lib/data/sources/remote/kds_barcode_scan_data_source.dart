@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:injectable/injectable.dart';
+import 'package:kds/core/utils/log.dart';
 
 abstract interface class IBarcodeScanDataSource {
   Stream<String> get scanStream;
@@ -11,26 +11,30 @@ abstract interface class IBarcodeScanDataSource {
 
 @Singleton(as: IBarcodeScanDataSource)
 class KdsBarcodeScanDataSource implements IBarcodeScanDataSource {
+  static const _tag = 'Scanner';
   static const MethodChannel _channel = MethodChannel('com.sg.kds/scanner');
 
   final StreamController<String> _scanController =
       StreamController<String>.broadcast();
 
+  /// Registers the native MethodCallHandler for barcode scan events.
+  /// 1. Set handler on [_channel] for 'onScan' method calls
+  /// 2. Forward received scan data to [_scanController] if not closed
   KdsBarcodeScanDataSource() {
-    debugPrint('📡 [Scanner] MethodCallHandler 등록 시작');
+    Log.d(_tag, 'Registering MethodCallHandler');
     _channel.setMethodCallHandler((call) async {
-      debugPrint('📡 [Scanner] 네이티브 호출 수신: ${call.method} / args: ${call.arguments}');
+      Log.d(_tag, 'Native call received: ${call.method} / args: ${call.arguments}');
       if (call.method == 'onScan') {
         final data = call.arguments.toString();
-        debugPrint('📡 [Scanner] 스캔 데이터 스트림에 추가: $data');
+        Log.d(_tag, 'Scan data added to stream: $data');
         if (!_scanController.isClosed) {
           _scanController.add(data);
         } else {
-          debugPrint('⚠️ [Scanner] _scanController가 닫혀 있어 데이터를 추가할 수 없습니다!');
+          Log.w(_tag, 'Controller is closed — cannot add scan data');
         }
       }
     });
-    debugPrint('📡 [Scanner] MethodCallHandler 등록 완료');
+    Log.d(_tag, 'MethodCallHandler registered');
   }
 
   @override
