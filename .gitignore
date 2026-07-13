@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Linux/macOS related
+linux/flutter/ephemeral/
+macos/Flutter/ephemeral/
+
+# Local secrets (see env.example.json for the template)
+env.json

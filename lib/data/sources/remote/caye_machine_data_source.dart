@@ -126,24 +126,38 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
     }
   }
 
-  /// Parses an incoming TCP packet, decrypts the body, and emits an [ExtractionProgress] event.
-  /// 1. Validate minimum packet length
-  /// 2. Extract function code and encrypted body slice
-  /// 3. Decrypt and decode JSON
-  /// 4. Emit [ExtractionProgress] for known function codes (0x20, 0x22, 0x23, 0x24, 0x35)
+  /// Parses all Caye packets in a single TCP segment and emits [ExtractionProgress] for each.
+  /// TCP may bundle multiple packets into one segment, so loop until the buffer is consumed.
+  /// 1. Check remaining bytes cover the minimum packet size (10 bytes header + tail)
+  /// 2. Validate magic header bytes [0xCC, 0xAA]; break on mismatch (malformed or incomplete)
+  /// 3. Read dataLength and compute full packet boundary; break if buffer is incomplete
+  /// 4. Decrypt and decode JSON body
+  /// 5. Emit [ExtractionProgress] for known function codes (0x20, 0x22, 0x23, 0x24, 0x35)
+  /// 6. Advance offset by full packet size and repeat
   void _handleIncoming(Uint8List data) {
-    if (data.length < 13) return;
-    final int functionCode = data[2];
-    final int dataLength = ByteData.sublistView(data, 5, 7).getUint16(0, Endian.big);
-    final Uint8List encryptedBody = data.sublist(7, 7 + dataLength);
-    final String? json = _decryptPayload(encryptedBody);
+    int offset = 0;
+    while (offset < data.length) {
+      if (data.length - offset < 10) break;
+      if (data[offset] != 0xCC || data[offset + 1] != 0xAA) break;
 
-    if (json != null) {
-      final decoded = jsonDecode(json) as Map<String, dynamic>;
-      if (const {0x20, 0x22, 0x23, 0x24, 0x35}.contains(functionCode)) {
-        _progressController.add(ExtractionProgress(code: functionCode, data: decoded));
+      final int functionCode = data[offset + 2];
+      final int dataLength =
+          ByteData.sublistView(data, offset + 5, offset + 7).getUint16(0, Endian.big);
+      final int packetEnd = offset + 7 + dataLength + 3;
+      if (packetEnd > data.length) break;
+
+      final Uint8List encryptedBody = data.sublist(offset + 7, offset + 7 + dataLength);
+      final String? json = _decryptPayload(encryptedBody);
+
+      if (json != null) {
+        final decoded = jsonDecode(json) as Map<String, dynamic>;
+        if (const {0x20, 0x22, 0x23, 0x24, 0x35}.contains(functionCode)) {
+          _progressController.add(ExtractionProgress(code: functionCode, data: decoded));
+        }
+        Log.long(_tag, '[Received] 0x${functionCode.toRadixString(16)} | $json');
       }
-      Log.long(_tag, '[Received] 0x${functionCode.toRadixString(16)} | $json');
+
+      offset = packetEnd;
     }
   }
 
