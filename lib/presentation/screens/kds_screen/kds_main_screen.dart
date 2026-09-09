@@ -5,6 +5,7 @@ import 'package:kds/domain/entities/index.dart';
 import 'package:kds/domain/enums/index.dart';
 import 'package:kds/presentation/cubit/index.dart';
 import 'package:kds/presentation/screens/caye_management_screen/caye_management_screen.dart';
+import 'package:kds/presentation/widgets/fleet_monitor_dialog.dart';
 
 import 'extraction_monitor_dialog.dart';
 import 'kds_main_texts.dart';
@@ -96,6 +97,16 @@ class _KdsMainScreenState extends State<KdsMainScreen> {
                 style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showFleetMonitorDialog() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => BlocProvider(
+        create: (_) => getIt<FleetMonitorCubit>(),
+        child: const FleetMonitorDialog(),
       ),
     );
   }
@@ -197,6 +208,21 @@ class _KdsMainScreenState extends State<KdsMainScreen> {
                           borderRadius: BorderRadius.circular(8)),
                     ),
                     child: const Text('Calibration',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                // Fleet Status button
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                  child: OutlinedButton(
+                    onPressed: _showFleetMonitorDialog,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.cyanAccent, width: 1.5),
+                      foregroundColor: Colors.cyanAccent,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Fleet Status',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),

@@ -37,17 +37,23 @@ extension _KdsCubitBarcodeExtension on KdsCubit {
             final lower = el.trim().toLowerCase();
             if (lower.startsWith('pkey:')) {
               pKey = el.split(':')[1];
-            } else if (lower.startsWith('shot:')) {
-              shotCount = int.tryParse(el.split(':')[1]) ?? 0;
             }
+            // Extra-shot QR parsing was a temporary addition for continuous-extraction
+            // testing and is disabled — shotCount stays 0.
+            // else if (lower.startsWith('shot:')) {
+            //   shotCount = int.tryParse(el.split(':')[1]) ?? 0;
+            // }
           }
         }
-      } else {
-        final decoded = utf8.decode(base64Decode(dataToProcess));
-        final scanData = jsonDecode(decoded) as Map<String, dynamic>;
-        orderNo = scanData['orderNo'] as String;
-        pKey = scanData['items'][0]['pKey'].toString();
       }
+      // Base64-encoded JSON scan format is unused — no code generates this format
+      // (printed QR labels are always pipe-delimited, see order_label_widget.dart).
+      // else {
+      //   final decoded = utf8.decode(base64Decode(dataToProcess));
+      //   final scanData = jsonDecode(decoded) as Map<String, dynamic>;
+      //   orderNo = scanData['orderNo'] as String;
+      //   pKey = scanData['items'][0]['pKey'].toString();
+      // }
 
       Log.d('KDS', 'Scan parsed — order: $orderNo, pKey: $pKey, seq: $targetIndex, shot: $shotCount, dispenser: $dispenserData');
 

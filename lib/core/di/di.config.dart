@@ -21,6 +21,7 @@ import '../../data/sources/local/recipe_data_source.dart' as _i489;
 import '../../data/sources/remote/caye_machine_data_source.dart' as _i422;
 import '../../data/sources/remote/kds_barcode_scan_data_source.dart' as _i792;
 import '../../data/sources/remote/kds_socket_data_source.dart' as _i919;
+import '../../data/sources/remote/mqtt_data_source.dart' as _i126;
 import '../../data/sources/remote/printer_data_source.dart' as _i656;
 import '../../domain/exception/base_exception_handler.dart' as _i543;
 import '../../domain/repositories/index.dart' as _i445;
@@ -35,9 +36,11 @@ import '../../domain/usecases/connect_order_socket_usecase.dart' as _i6;
 import '../../domain/usecases/disconnect_order_socket_usecase.dart' as _i479;
 import '../../domain/usecases/dispose_machine_usecase.dart' as _i135;
 import '../../domain/usecases/dispose_printer_usecase.dart' as _i517;
+import '../../domain/usecases/get_fleet_snapshot_usecase.dart' as _i26;
 import '../../domain/usecases/get_recipe_usecase.dart' as _i510;
 import '../../domain/usecases/observe_barcode_scan_usecase.dart' as _i174;
 import '../../domain/usecases/observe_calibration_status_usecase.dart' as _i5;
+import '../../domain/usecases/observe_fleet_heartbeats_usecase.dart' as _i398;
 import '../../domain/usecases/observe_machine_connection_usecase.dart' as _i847;
 import '../../domain/usecases/observe_machine_progress_usecase.dart' as _i804;
 import '../../domain/usecases/observe_order_connection_usecase.dart' as _i628;
@@ -54,6 +57,8 @@ import '../../domain/usecases/send_today_extraction_history_usecase.dart'
     as _i281;
 import '../../domain/usecases/start_calibration_usecase.dart' as _i583;
 import '../../presentation/cubit/caye/caye_management_cubit.dart' as _i776;
+import '../../presentation/cubit/fleet_monitor/fleet_monitor_cubit.dart'
+    as _i102;
 import '../../presentation/cubit/kds/kds_cubit.dart' as _i807;
 
 // initializes the registration of main-scope dependencies inside of GetIt
@@ -64,9 +69,7 @@ _i174.GetIt $initGetIt(
 }) {
   final gh = _i526.GetItHelper(getIt, environment, environmentFilter);
   gh.singleton<_i919.IKdsSocketDataSource>(() => _i919.KdsSocketDataSource());
-  gh.singleton<_i507.OrderRepository>(
-    () => _i717.OrderRepositoryImpl(gh<_i919.IKdsSocketDataSource>()),
-  );
+  gh.singleton<_i126.IMqttDataSource>(() => _i126.MqttDataSource());
   gh.factory<_i543.BaseExceptionHandler>(() => _i3.CommonExceptionHandler());
   gh.singleton<_i422.ICayeMachineDataSource>(
     () => _i422.CayeMachineDataSource(),
@@ -113,20 +116,14 @@ _i174.GetIt $initGetIt(
     () =>
         _i281.SendTodayExtractionHistoryUseCase(gh<_i958.MachineRepository>()),
   );
-  gh.factory<_i6.ConnectOrderSocketUseCase>(
-    () => _i6.ConnectOrderSocketUseCase(gh<_i507.OrderRepository>()),
-  );
-  gh.factory<_i479.DisconnectOrderSocketUseCase>(
-    () => _i479.DisconnectOrderSocketUseCase(gh<_i507.OrderRepository>()),
-  );
-  gh.factory<_i628.ObserveOrderConnectionUseCase>(
-    () => _i628.ObserveOrderConnectionUseCase(gh<_i507.OrderRepository>()),
-  );
-  gh.factory<_i583.StartCalibrationUseCase>(
-    () => _i583.StartCalibrationUseCase(gh<_i507.OrderRepository>()),
-  );
   gh.singleton<_i115.PrinterRepository>(
     () => _i514.PrinterRepositoryImpl(gh<_i656.IPrinterDataSource>()),
+  );
+  gh.singleton<_i507.OrderRepository>(
+    () => _i717.OrderRepositoryImpl(
+      gh<_i919.IKdsSocketDataSource>(),
+      gh<_i126.IMqttDataSource>(),
+    ),
   );
   gh.singleton<_i197.RecipeRepository>(
     () => _i869.RecipeRepositoryImpl(gh<_i489.IRecipeDataSource>()),
@@ -136,6 +133,9 @@ _i174.GetIt $initGetIt(
   );
   gh.factory<_i5.ObserveCalibrationStatusUseCase>(
     () => _i5.ObserveCalibrationStatusUseCase(gh<_i507.OrderRepository>()),
+  );
+  gh.factory<_i398.ObserveFleetHeartbeatsUseCase>(
+    () => _i398.ObserveFleetHeartbeatsUseCase(gh<_i507.OrderRepository>()),
   );
   gh.factory<_i640.ObservePickupCompleteUseCase>(
     () => _i640.ObservePickupCompleteUseCase(gh<_i507.OrderRepository>()),
@@ -169,6 +169,21 @@ _i174.GetIt $initGetIt(
   gh.factory<_i510.GetRecipeUseCase>(
     () => _i510.GetRecipeUseCase(gh<_i197.RecipeRepository>()),
   );
+  gh.factory<_i6.ConnectOrderSocketUseCase>(
+    () => _i6.ConnectOrderSocketUseCase(gh<_i507.OrderRepository>()),
+  );
+  gh.factory<_i479.DisconnectOrderSocketUseCase>(
+    () => _i479.DisconnectOrderSocketUseCase(gh<_i507.OrderRepository>()),
+  );
+  gh.factory<_i26.GetFleetSnapshotUseCase>(
+    () => _i26.GetFleetSnapshotUseCase(gh<_i507.OrderRepository>()),
+  );
+  gh.factory<_i628.ObserveOrderConnectionUseCase>(
+    () => _i628.ObserveOrderConnectionUseCase(gh<_i507.OrderRepository>()),
+  );
+  gh.factory<_i583.StartCalibrationUseCase>(
+    () => _i583.StartCalibrationUseCase(gh<_i507.OrderRepository>()),
+  );
   gh.factory<_i807.KdsCubit>(
     () => _i807.KdsCubit(
       completeCooking: gh<_i110.CompleteCookingUseCase>(),
@@ -189,6 +204,12 @@ _i174.GetIt $initGetIt(
       observeCalibrationStatus: gh<_i5.ObserveCalibrationStatusUseCase>(),
       disposeMachine: gh<_i135.DisposeMachineUseCase>(),
       disposePrinter: gh<_i517.DisposePrinterUseCase>(),
+    ),
+  );
+  gh.factory<_i102.FleetMonitorCubit>(
+    () => _i102.FleetMonitorCubit(
+      getFleetSnapshot: gh<_i26.GetFleetSnapshotUseCase>(),
+      observeFleetHeartbeats: gh<_i398.ObserveFleetHeartbeatsUseCase>(),
     ),
   );
   return getIt;

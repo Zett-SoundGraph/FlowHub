@@ -8,9 +8,11 @@ import 'package:kds/domain/entities/index.dart';
 
 abstract interface class IKdsSocketDataSource {
   Stream<bool> get connectionStream;
-  Stream<({String orderNo, String menuName})> get pickupCompleteStream;
+  // PICKUP_COMPLETE now arrives via MQTT (see IMqttDataSource.pickupCompleteStream)
+  // Stream<({String orderNo, String menuName})> get pickupCompleteStream;
   Stream<String> get calibrationStatusStream;
-  Stream<String> get barcodeScanStream;
+  // BARCODE_SCAN now arrives via MQTT (see IMqttDataSource.barcodeScanStream)
+  // Stream<String> get barcodeScanStream;
   Future<void> connect();
   void sendOrderReady(Order order, SubItem subItem);
   void sendStartCalibration(double height);
@@ -27,27 +29,22 @@ class KdsSocketDataSource implements IKdsSocketDataSource {
 
   final StreamController<bool> _connectionController =
       StreamController<bool>.broadcast();
-  final StreamController<({String orderNo, String menuName})>
-      _pickupCompleteController =
-      StreamController<({String orderNo, String menuName})>.broadcast();
+  // Superseded by MqttDataSource._pickupCompleteController
+  // final StreamController<({String orderNo, String menuName})>
+  //     _pickupCompleteController =
+  //     StreamController<({String orderNo, String menuName})>.broadcast();
   final StreamController<String> _calibrationStatusController =
       StreamController<String>.broadcast();
-  final StreamController<String> _barcodeScanController =
-      StreamController<String>.broadcast();
+  // Superseded by MqttDataSource._barcodeScanController
+  // final StreamController<String> _barcodeScanController =
+  //     StreamController<String>.broadcast();
 
   @override
   Stream<bool> get connectionStream => _connectionController.stream;
 
   @override
-  Stream<({String orderNo, String menuName})> get pickupCompleteStream =>
-      _pickupCompleteController.stream;
-
-  @override
   Stream<String> get calibrationStatusStream =>
       _calibrationStatusController.stream;
-
-  @override
-  Stream<String> get barcodeScanStream => _barcodeScanController.stream;
 
   /// Binds an HTTP server and upgrades incoming WebSocket connections.
   /// 1. Bind [HttpServer] to all IPv4 interfaces on [_serverPort]
@@ -98,35 +95,35 @@ class KdsSocketDataSource implements IKdsSocketDataSource {
 
   /// Parses a raw JSON message and dispatches to the appropriate stream.
   /// 1. Decode JSON and extract 'type' / 'event_type' field
-  /// 2. PICKUP_COMPLETE → [_pickupCompleteController]
-  /// 3. VALIDATION_MODE / CALIB_EXIT → [_calibrationStatusController]
-  /// 4. BARCODE_SCAN → [_barcodeScanController]
-  /// 5. object_update → [_handleObjectUpdate] for filtering
-  /// 6. All other messages → [_broadcastExcept]
+  /// 2. VALIDATION_MODE / CALIB_EXIT → [_calibrationStatusController]
+  /// 3. object_update → [_handleObjectUpdate] for filtering
+  /// 4. All other messages → [_broadcastExcept]
   void _handleMessage(String raw, WebSocket sender, String? clientIp) {
     try {
       final Map<String, dynamic> json = jsonDecode(raw);
       final String type = json['type'] ?? json['event_type'] ?? '';
 
-      if (type == 'PICKUP_COMPLETE') {
-        _pickupCompleteController.add((
-          orderNo: json['orderNo'].toString(),
-          menuName: json['menuName']?.toString() ?? '',
-        ));
-        return;
-      }
+      // PICKUP_COMPLETE now arrives via MQTT (beta/pickuptable/pickup)
+      // if (type == 'PICKUP_COMPLETE') {
+      //   _pickupCompleteController.add((
+      //     orderNo: json['orderNo'].toString(),
+      //     menuName: json['menuName']?.toString() ?? '',
+      //   ));
+      //   return;
+      // }
 
       if (type == 'VALIDATION_MODE' || type == 'CALIB_EXIT') {
         _calibrationStatusController.add(type);
         return;
       }
 
-      if (type == 'BARCODE_SCAN') {
-        final barcode = json['barcode']?.toString() ?? '';
-        Log.d(_tag, 'BARCODE_SCAN received: $barcode (from $clientIp)');
-        if (barcode.isNotEmpty) _barcodeScanController.add(barcode);
-        return;
-      }
+      // BARCODE_SCAN now arrives via MQTT (beta/qr/order)
+      // if (type == 'BARCODE_SCAN') {
+      //   final barcode = json['barcode']?.toString() ?? '';
+      //   Log.d(_tag, 'BARCODE_SCAN received: $barcode (from $clientIp)');
+      //   if (barcode.isNotEmpty) _barcodeScanController.add(barcode);
+      //   return;
+      // }
 
       if (type == 'object_update') {
         _handleObjectUpdate(json, raw, sender);
@@ -235,9 +232,7 @@ class KdsSocketDataSource implements IKdsSocketDataSource {
     }
     _allClients.clear();
     _connectionController.close();
-    _pickupCompleteController.close();
     _calibrationStatusController.close();
-    _barcodeScanController.close();
     Log.d(_tag, 'Server closed');
   }
 }
