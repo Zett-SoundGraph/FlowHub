@@ -1,8 +1,8 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:ui';
 
-import 'package:kds/presentation/theme/color_theme.dart';
-import 'package:kds/presentation/theme/text_theme.dart';
+import 'package:flowhub/presentation/theme/color_theme.dart';
+import 'package:flowhub/presentation/theme/text_theme.dart';
 
 
 class SystemThemeData {

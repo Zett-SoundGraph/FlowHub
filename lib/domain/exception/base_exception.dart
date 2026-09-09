@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:kds/domain/exception/errors/error_response.dart';
+import 'package:flowhub/domain/exception/errors/error_response.dart';
 
 part 'base_exception.freezed.dart';
 

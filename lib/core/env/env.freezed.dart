@@ -223,8 +223,8 @@ return staging(_that.apiUrl);case _:
 /// @nodoc
 
 
-class _Env implements Env {
-  const _Env({this.apiUrl = ""});
+class _Env extends Env {
+  const _Env({this.apiUrl = ""}): super._();
   
 
 @override@JsonKey() final  String apiUrl;
@@ -289,8 +289,8 @@ as String,
 /// @nodoc
 
 
-class _EnvDev implements Env {
-   _EnvDev({this.apiUrl = ""});
+class _EnvDev extends Env {
+   _EnvDev({this.apiUrl = ""}): super._();
   
 
 @override@JsonKey() final  String apiUrl;
@@ -355,8 +355,8 @@ as String,
 /// @nodoc
 
 
-class _EnvProd implements Env {
-   _EnvProd({this.apiUrl = ""});
+class _EnvProd extends Env {
+   _EnvProd({this.apiUrl = ""}): super._();
   
 
 @override@JsonKey() final  String apiUrl;
@@ -421,8 +421,8 @@ as String,
 /// @nodoc
 
 
-class _EnvStaging implements Env {
-   _EnvStaging({this.apiUrl = ""});
+class _EnvStaging extends Env {
+   _EnvStaging({this.apiUrl = ""}): super._();
   
 
 @override@JsonKey() final  String apiUrl;

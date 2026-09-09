@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:kds/core/constants/index.dart';
-import 'package:kds/domain/exception/base_exception.dart';
-import 'package:kds/domain/exception/errors/error_response.dart';
+import 'package:flowhub/core/constants/index.dart';
+import 'package:flowhub/domain/exception/base_exception.dart';
+import 'package:flowhub/domain/exception/errors/error_response.dart';
 
 class CommonInterceptor extends InterceptorsWrapper {
   CommonInterceptor();

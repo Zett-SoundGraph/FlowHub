@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:kds/presentation/routes/routes.dart';
-import 'package:kds/presentation/theme/system_theme.dart';
+import 'package:flowhub/presentation/routes/routes.dart';
+import 'package:flowhub/presentation/theme/system_theme.dart';
 
 class KdsApp extends StatelessWidget {
   const KdsApp({super.key});

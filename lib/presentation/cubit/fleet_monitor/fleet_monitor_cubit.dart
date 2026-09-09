@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import 'package:kds/domain/repositories/order_repository.dart';
-import 'package:kds/domain/usecases/get_fleet_snapshot_usecase.dart';
-import 'package:kds/domain/usecases/observe_fleet_heartbeats_usecase.dart';
+import 'package:flowhub/domain/repositories/order_repository.dart';
+import 'package:flowhub/domain/usecases/get_fleet_snapshot_usecase.dart';
+import 'package:flowhub/domain/usecases/observe_fleet_heartbeats_usecase.dart';
 
 import 'fleet_monitor_state.dart';
 

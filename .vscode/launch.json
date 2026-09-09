@@ -9,7 +9,7 @@
       "request": "launch",
       "type": "dart",
       "program": "lib/main_dev.dart",
-      "args": ["--no-enable-impeller"]
+      "args": ["--no-enable-impeller", "--dart-define-from-file=env.json"]
     },
     {
       "name": "FlowHub (Dev Release)",
@@ -17,14 +17,14 @@
       "type": "dart",
       "flutterMode": "release",
       "program": "lib/main_dev.dart",
-      "args": ["--no-enable-impeller"]
+      "args": ["--no-enable-impeller", "--dart-define-from-file=env.json"]
     },
     {
       "name": "FlowHub (Prod Debug)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main_prod.dart",
-      "args": ["--no-enable-impeller"]
+      "args": ["--no-enable-impeller", "--dart-define-from-file=env.json"]
     },
     {
       "name": "FlowHub (Prod Release)",
@@ -32,7 +32,7 @@
       "type": "dart",
       "flutterMode": "release",
       "program": "lib/main_prod.dart",
-      "args": ["--no-enable-impeller"]
+      "args": ["--no-enable-impeller", "--dart-define-from-file=env.json"]
     },
   ]
 }

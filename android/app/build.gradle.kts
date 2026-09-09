@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.kds"
+    namespace = "com.example.flowhub"
     compileSdk = 36
     ndkVersion = "27.0.12077973"
 
@@ -26,7 +26,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.kds"
+        applicationId = "com.example.flowhub"
         minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kds/domain/repositories/order_repository.dart';
-import 'package:kds/presentation/cubit/fleet_monitor/fleet_monitor_cubit.dart';
-import 'package:kds/presentation/cubit/fleet_monitor/fleet_monitor_state.dart';
+import 'package:flowhub/domain/repositories/order_repository.dart';
+import 'package:flowhub/presentation/cubit/fleet_monitor/fleet_monitor_cubit.dart';
+import 'package:flowhub/presentation/cubit/fleet_monitor/fleet_monitor_state.dart';
 
 /// Shows every device seen on `beta/system/heartbeat/+`, independent of
 /// whatever the Message Hub dashboard itself displays.

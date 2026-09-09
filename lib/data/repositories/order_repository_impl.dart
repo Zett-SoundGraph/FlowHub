@@ -1,9 +1,9 @@
 import 'package:injectable/injectable.dart' hide Order;
-// import 'package:kds/data/sources/remote/kds_barcode_scan_data_source.dart'; // replaced by WebSocket-based approach
-import 'package:kds/data/sources/remote/kds_socket_data_source.dart';
-import 'package:kds/data/sources/remote/mqtt_data_source.dart';
-import 'package:kds/domain/entities/index.dart';
-import 'package:kds/domain/repositories/order_repository.dart';
+// import 'package:flowhub/data/sources/remote/kds_barcode_scan_data_source.dart'; // replaced by WebSocket-based approach
+import 'package:flowhub/data/sources/remote/kds_socket_data_source.dart';
+import 'package:flowhub/data/sources/remote/mqtt_data_source.dart';
+import 'package:flowhub/domain/entities/index.dart';
+import 'package:flowhub/domain/repositories/order_repository.dart';
 
 @Singleton(as: OrderRepository)
 class OrderRepositoryImpl implements OrderRepository {
@@ -22,14 +22,28 @@ class OrderRepositoryImpl implements OrderRepository {
 
   @override
   Stream<String> get calibrationStatusStream =>
-      _socketDataSource.calibrationStatusStream;
+      _mqttDataSource.calibrationStatusStream;
 
   @override
   Stream<String> get barcodeScanStream => _mqttDataSource.barcodeScanStream;
 
   @override
+  Stream<String> get qrCompleteStream => _mqttDataSource.qrCompleteStream;
+
+  @override
   Stream<FleetHeartbeatEvent> get fleetHeartbeatStream =>
       _mqttDataSource.fleetHeartbeatStream;
+
+  @override
+  Stream<Order> get kioskOrderStream => _mqttDataSource.kioskOrderStream;
+
+  @override
+  Stream<LeaderUpdateMessage> get leaderUpdateStream =>
+      _mqttDataSource.leaderUpdateStream;
+
+  @override
+  Stream<FollowerSyncRequest> get followerSyncRequestStream =>
+      _mqttDataSource.followerSyncRequestStream;
 
   @override
   Map<String, DateTime> get fleetLastSeen => _mqttDataSource.fleetLastSeen;
@@ -42,7 +56,46 @@ class OrderRepositoryImpl implements OrderRepository {
 
   @override
   void sendStartCalibration(double height) =>
-      _socketDataSource.sendStartCalibration(height);
+      _mqttDataSource.publishStartCalibration(height);
+
+  @override
+  Future<void> publishLeaderUpdate(LeaderUpdateMessage message) =>
+      _mqttDataSource.publishLeaderUpdate(message);
+
+  @override
+  Future<void> publishFollowerSync(FollowerSyncRequest request) =>
+      _mqttDataSource.publishFollowerSync(request);
+
+  @override
+  Future<void> publishBoardUpdate(BoardUpdateMessage message) =>
+      _mqttDataSource.publishBoardUpdate(message);
+
+  @override
+  Future<void> publishKioskUpdate(KioskUpdateMessage message) =>
+      _mqttDataSource.publishKioskUpdate(message);
+
+  @override
+  Future<void> publishCayeFault(CayeFaultMessage message) =>
+      _mqttDataSource.publishCayeFault(message);
+
+  @override
+  Future<void> publishCayeStatus(CayeStatusMessage message) =>
+      _mqttDataSource.publishCayeStatus(message);
+
+  @override
+  Future<void> publishCayeRinsing(CayeEventMessage message) =>
+      _mqttDataSource.publishCayeRinsing(message);
+
+  @override
+  Future<void> publishCayeCleaning(CayeEventMessage message) =>
+      _mqttDataSource.publishCayeCleaning(message);
+
+  @override
+  Future<void> publishWledPower(bool on) => _mqttDataSource.publishWledPower(on);
+
+  @override
+  Future<void> publishWledApi(Map<String, dynamic> body) =>
+      _mqttDataSource.publishWledApi(body);
 
   @override
   void disconnect() {
@@ -54,7 +107,7 @@ class OrderRepositoryImpl implements OrderRepository {
   @override
   Future<bool> completeCooking(Order order, SubItem subItem) async {
     try {
-      _socketDataSource.sendOrderReady(order, subItem);
+      await _mqttDataSource.publishOrderReady(order, subItem);
       return true;
     } catch (e) {
       return false;

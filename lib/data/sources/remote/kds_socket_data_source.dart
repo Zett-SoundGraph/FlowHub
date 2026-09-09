@@ -3,19 +3,22 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:injectable/injectable.dart' hide Order;
-import 'package:kds/core/utils/log.dart';
-import 'package:kds/domain/entities/index.dart';
+import 'package:flowhub/core/utils/log.dart';
 
 abstract interface class IKdsSocketDataSource {
   Stream<bool> get connectionStream;
   // PICKUP_COMPLETE now arrives via MQTT (see IMqttDataSource.pickupCompleteStream)
   // Stream<({String orderNo, String menuName})> get pickupCompleteStream;
-  Stream<String> get calibrationStatusStream;
   // BARCODE_SCAN now arrives via MQTT (see IMqttDataSource.barcodeScanStream)
   // Stream<String> get barcodeScanStream;
+  // VALIDATION_MODE/CALIB_EXIT now arrive via MQTT (see
+  // IMqttDataSource.calibrationStatusStream)
+  // Stream<String> get calibrationStatusStream;
   Future<void> connect();
-  void sendOrderReady(Order order, SubItem subItem);
-  void sendStartCalibration(double height);
+  // ORDER_READY/START_CALIBRATION now go out via MQTT (see
+  // IMqttDataSource.publishOrderReady/publishStartCalibration)
+  // void sendOrderReady(Order order, SubItem subItem);
+  // void sendStartCalibration(double height);
   void dispose();
 }
 
@@ -33,18 +36,15 @@ class KdsSocketDataSource implements IKdsSocketDataSource {
   // final StreamController<({String orderNo, String menuName})>
   //     _pickupCompleteController =
   //     StreamController<({String orderNo, String menuName})>.broadcast();
-  final StreamController<String> _calibrationStatusController =
-      StreamController<String>.broadcast();
   // Superseded by MqttDataSource._barcodeScanController
   // final StreamController<String> _barcodeScanController =
+  //     StreamController<String>.broadcast();
+  // Superseded by MqttDataSource._calibrationStatusController
+  // final StreamController<String> _calibrationStatusController =
   //     StreamController<String>.broadcast();
 
   @override
   Stream<bool> get connectionStream => _connectionController.stream;
-
-  @override
-  Stream<String> get calibrationStatusStream =>
-      _calibrationStatusController.stream;
 
   /// Binds an HTTP server and upgrades incoming WebSocket connections.
   /// 1. Bind [HttpServer] to all IPv4 interfaces on [_serverPort]
@@ -94,14 +94,20 @@ class KdsSocketDataSource implements IKdsSocketDataSource {
   }
 
   /// Parses a raw JSON message and dispatches to the appropriate stream.
-  /// 1. Decode JSON and extract 'type' / 'event_type' field
-  /// 2. VALIDATION_MODE / CALIB_EXIT → [_calibrationStatusController]
-  /// 3. object_update → [_handleObjectUpdate] for filtering
-  /// 4. All other messages → [_broadcastExcept]
+  /// Every case that used to switch on 'type'/'event_type' here (PICKUP_
+  /// COMPLETE, BARCODE_SCAN, VALIDATION_MODE/CALIB_EXIT) has since moved to
+  /// MQTT — see the comments below for where each landed. What's left after
+  /// decoding just validates it's real JSON before [_broadcastExcept]ing it
+  /// unchanged. In practice today that's ORDER_READY/START_CALIBRATION
+  /// (Flutter→Flutter, unrelated to the Pi/ToF migration — no MQTT
+  /// equivalent yet) and the Raspberry Pi's own object_update — the Pi
+  /// dual-publishes that one over MQTT (beta/tof/objects) AND this socket
+  /// as a transition safety net (see PiMqttManager), so it's still expected
+  /// here; kds just no longer filters/inspects it (that moved to the Pi's
+  /// own send path — see filterInvalidDiameterObjects in VizDepthFrame.cpp).
   void _handleMessage(String raw, WebSocket sender, String? clientIp) {
     try {
-      final Map<String, dynamic> json = jsonDecode(raw);
-      final String type = json['type'] ?? json['event_type'] ?? '';
+      jsonDecode(raw);
 
       // PICKUP_COMPLETE now arrives via MQTT (beta/pickuptable/pickup)
       // if (type == 'PICKUP_COMPLETE') {
@@ -112,10 +118,12 @@ class KdsSocketDataSource implements IKdsSocketDataSource {
       //   return;
       // }
 
-      if (type == 'VALIDATION_MODE' || type == 'CALIB_EXIT') {
-        _calibrationStatusController.add(type);
-        return;
-      }
+      // VALIDATION_MODE/CALIB_EXIT now arrive via MQTT
+      // (beta/pickuptable/calibration_status)
+      // if (type == 'VALIDATION_MODE' || type == 'CALIB_EXIT') {
+      //   _calibrationStatusController.add(type);
+      //   return;
+      // }
 
       // BARCODE_SCAN now arrives via MQTT (beta/qr/order)
       // if (type == 'BARCODE_SCAN') {
@@ -125,57 +133,10 @@ class KdsSocketDataSource implements IKdsSocketDataSource {
       //   return;
       // }
 
-      if (type == 'object_update') {
-        _handleObjectUpdate(json, raw, sender);
-        return;
-      }
-
       _broadcastExcept(raw, sender);
     } catch (e) {
       Log.e(_tag, 'Message handling error: $e');
     }
-  }
-
-  /// Filters out invalid objects from an object_update message before broadcast.
-  /// 1. Reject objects with diameter == 0 or >= 350mm
-  /// 2. If all objects are valid, broadcast the original message unchanged
-  /// 3. Otherwise re-encode the filtered object list and broadcast
-  void _handleObjectUpdate(
-      Map<String, dynamic> json, String raw, WebSocket sender) {
-    final objects = json['objects'] as List<dynamic>? ?? [];
-    final baseZ = json['base_z'];
-
-    final validObjects = <dynamic>[];
-    for (final obj in objects) {
-      final id = obj['object_id'];
-      final diameter = (obj['size']?['diameter'] as num?)?.toDouble() ?? 0;
-      final w = obj['size']?['width'];
-      final h = obj['size']?['height'];
-      final x = (obj['position']?['x'] as num?)?.toStringAsFixed(1);
-      final y = (obj['position']?['y'] as num?)?.toStringAsFixed(1);
-      final z = obj['z_value'];
-
-      if (diameter == 0.0 || diameter >= 350.0) {
-        Log.d('object_update', 'id=$id → diameter=${diameter.toStringAsFixed(1)}mm filtered out');
-        continue;
-      }
-
-      Log.d(
-        'object_update',
-        'id=$id, diameter=${diameter.toStringAsFixed(1)}mm, '
-        'w=${w}px h=${h}px, pos=($x,$y), z=$z, base_z=$baseZ',
-      );
-      validObjects.add(obj);
-    }
-
-    if (validObjects.length == objects.length) {
-      _broadcastExcept(raw, sender);
-      return;
-    }
-
-    final modified = Map<String, dynamic>.from(json)
-      ..['objects'] = validObjects;
-    _broadcastExcept(jsonEncode(modified), sender);
   }
 
   /// Sends [message] to all connected clients except [sender].
@@ -186,40 +147,15 @@ class KdsSocketDataSource implements IKdsSocketDataSource {
     }
   }
 
-  /// Sends [message] to all connected clients.
-  void _broadcast(String message) {
-    for (final client in List.from(_allClients)) {
-      if (client.readyState == WebSocket.open) client.add(message);
-    }
-  }
-
-  /// Broadcasts an ORDER_READY event to all connected pickup table clients.
-  @override
-  void sendOrderReady(Order order, SubItem subItem) {
-    _broadcast(jsonEncode({
-      'type': 'ORDER_READY',
-      'orderNo': order.orderNo,
-      'menuName': subItem.menuName,
-      'drinkCount': order.drinkCount,
-      'foodCount': order.foodCount,
-      'bottleCount': order.bottleCount,
-      'nickname': order.nickname ?? '',
-      'totalRequired': order.totalCups,
-      'timestamp': DateTime.now().toIso8601String(),
-    }));
-    Log.d(_tag, 'ORDER_READY broadcast: ${order.orderNo} (${subItem.menuName})');
-  }
-
-  /// Broadcasts a START_CALIBRATION event with [height] to all connected clients.
-  /// The pickup table handles this event to trigger height-sensor calibration.
-  @override
-  void sendStartCalibration(double height) {
-    _broadcast(jsonEncode({
-      'type': 'START_CALIBRATION',
-      'height': height,
-      'timestamp': DateTime.now().toIso8601String(),
-    }));
-  }
+  // ORDER_READY/START_CALIBRATION now go out via MQTT
+  // (IMqttDataSource.publishOrderReady/publishStartCalibration) — this was
+  // their only caller, so _broadcast (as opposed to _broadcastExcept, which
+  // is still used for everything else on this socket) has no more use.
+  // void _broadcast(String message) {
+  //   for (final client in List.from(_allClients)) {
+  //     if (client.readyState == WebSocket.open) client.add(message);
+  //   }
+  // }
 
   /// Closes the HTTP server and all active WebSocket connections.
   @override
@@ -232,7 +168,6 @@ class KdsSocketDataSource implements IKdsSocketDataSource {
     }
     _allClients.clear();
     _connectionController.close();
-    _calibrationStatusController.close();
     Log.d(_tag, 'Server closed');
   }
 }

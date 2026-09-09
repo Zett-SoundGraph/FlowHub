@@ -5,12 +5,19 @@ import 'dart:typed_data';
 
 import 'package:encrypt/encrypt.dart' as enc;
 import 'package:injectable/injectable.dart' hide Order;
-import 'package:kds/core/utils/log.dart';
-import 'package:kds/domain/entities/index.dart';
+import 'package:flowhub/core/utils/log.dart';
+import 'package:flowhub/data/sources/local/caye_key_data_source.dart';
+import 'package:flowhub/domain/entities/index.dart';
 
 abstract interface class ICayeMachineDataSource {
   Stream<ExtractionProgress> get progressStream;
   Stream<bool> get connectionStream;
+  /// Current connection state as of the last connect/disconnect — unlike
+  /// [connectionStream] (a broadcast stream, which only replays FUTURE
+  /// transitions), this lets a freshly-created listener learn the state
+  /// immediately without waiting for the next transition, which may never
+  /// come if the connection was already established before it subscribed.
+  bool get isConnected;
 
   Future<void> sendMakeCommand(String ip, String productKey, String orderNo);
   Future<void> sendCancelCommand(String ip, String productKey, String orderNo);
@@ -20,7 +27,24 @@ abstract interface class ICayeMachineDataSource {
   Future<void> sendRinsingCommand(String ip);
   Future<void> sendCleaningCommand(String ip, {int mode = 0});
   Future<void> sendQueryStatus(String ip);
-  Future<void> sendTodayExtractionHistory(String ip);
+  /// Queries the machine's brew history between [startTs] and [endTs]
+  /// (Unix ms) — the machine responds with up to 100 of the most recent
+  /// matching records as a 0x35 packet (`{"beverageList": [...]}`), which
+  /// arrives via [progressStream] like any other machine response. Per the
+  /// confirmed protocol spec, the body must NOT be empty — a start/end pair
+  /// is required on every call.
+  Future<void> sendExtractionHistory(String ip, {required int startTs, required int endTs});
+
+  /// Persists [key] as the AES key used to encrypt/decrypt every packet sent
+  /// to the Caye machine, replacing whatever was in effect — survives an app
+  /// restart (see [ICayeKeyDataSource]). Each physical Caye unit uses its
+  /// own key, so this is what the Caye Machine Control screen's Save button
+  /// applies after swapping to a different physical machine.
+  Future<void> setApiKey(String key);
+  /// The AES key currently in effect — whatever was last saved via
+  /// [setApiKey] (this session or a previous one), or the built-in default
+  /// if none ever was.
+  Future<String> get currentApiKey;
 
   void dispose();
 }
@@ -28,10 +52,55 @@ abstract interface class ICayeMachineDataSource {
 @Singleton(as: ICayeMachineDataSource)
 class CayeMachineDataSource implements ICayeMachineDataSource {
   static const String _tag = 'Caye';
-  static const String _hexKey = '734B09645723794F14B817BB6218D14E';
+  // Built-in fallback — used until an operator saves a real key via the
+  // Caye Machine Control screen (see setApiKey), or forever if this unit
+  // never needs one. Different physical Caye machines use different keys,
+  // so this is only ever correct for whichever unit it happened to be
+  // copied from.
+  static const String _defaultHexKey = '7F7AD4F84BA40571506D798374932711';
+
+  final ICayeKeyDataSource _keyDataSource;
+
+  String _hexKey = _defaultHexKey;
+  // Completes once the persisted key (if any) has been loaded from disk —
+  // read by [currentApiKey] so a caller displaying "the current key" (e.g.
+  // the Caye Machine Control screen, on open) waits for the real saved
+  // value instead of racing it and briefly showing the built-in default.
+  late final Future<void> _keyLoaded;
+
+  CayeMachineDataSource(this._keyDataSource) {
+    _keyLoaded = _loadSavedKey();
+  }
+
+  Future<void> _loadSavedKey() async {
+    final saved = await _keyDataSource.readKey();
+    if (saved != null && saved.isNotEmpty) {
+      _hexKey = saved;
+      Log.d(_tag, 'Loaded saved Caye API key');
+    }
+  }
+
+  @override
+  Future<void> setApiKey(String key) async {
+    _hexKey = key;
+    await _keyDataSource.saveKey(key);
+    Log.d(_tag, 'Caye API key updated and saved');
+  }
+
+  @override
+  Future<String> get currentApiKey async {
+    await _keyLoaded;
+    return _hexKey;
+  }
 
   Socket? _socket;
   Timer? _heartbeatTimer;
+  bool _isConnected = false;
+  // Tracks an in-flight lazy-connect so two _sendPacket calls arriving
+  // back-to-back while _socket is briefly null (e.g. right after a
+  // disconnect) share the SAME connection attempt instead of each
+  // independently racing to open their own — see _ensureConnected.
+  Future<void>? _connectingFuture;
 
   final StreamController<bool> _connectionController =
       StreamController<bool>.broadcast();
@@ -43,6 +112,9 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
 
   @override
   Stream<bool> get connectionStream => _connectionController.stream;
+
+  @override
+  bool get isConnected => _isConnected;
 
   /// Encrypts a function code + body map into AES-CBC bytes with an 8-byte timestamp prefix.
   /// 1. Build 8-byte big-endian timestamp
@@ -96,15 +168,7 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
     const int port = 31255;
     try {
       if (_socket == null) {
-        Log.d(_tag, 'Connecting to $ip:$port');
-        _socket = await Socket.connect(ip, port, timeout: const Duration(seconds: 5));
-        _connectionController.add(true);
-        _socket!.listen(
-          _handleIncoming,
-          onDone: _handleDisconnect,
-          onError: (_) => _handleDisconnect(),
-        );
-        _startHeartbeat(ip);
+        await _ensureConnected(ip, port);
       }
 
       final Uint8List encrypted = _encryptPayload(functionCode, body);
@@ -124,6 +188,35 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
       Log.e(_tag, 'Send error: $e');
       _handleDisconnect();
     }
+  }
+
+  /// Opens the TCP connection if one isn't already in flight — without this
+  /// guard, two calls to [_sendPacket] arriving back-to-back while [_socket]
+  /// is briefly null (e.g. right after a disconnect) would each
+  /// independently see it as null and race to open their OWN separate TCP
+  /// connection. That double-connect was seen in practice under the shot-
+  /// test button's back-to-back polling (no gap between shots for a
+  /// disconnect/reconnect to settle before the next send), and is exactly
+  /// the kind of thing that can trip an embedded TCP stack into tearing one
+  /// of the two connections back down.
+  Future<void> _ensureConnected(String ip, int port) {
+    final inFlight = _connectingFuture;
+    if (inFlight != null) return inFlight;
+
+    final future = () async {
+      Log.d(_tag, 'Connecting to $ip:$port');
+      _socket = await Socket.connect(ip, port, timeout: const Duration(seconds: 5));
+      _isConnected = true;
+      _connectionController.add(true);
+      _socket!.listen(
+        _handleIncoming,
+        onDone: _handleDisconnect,
+        onError: (_) => _handleDisconnect(),
+      );
+      _startHeartbeat(ip);
+    }();
+    _connectingFuture = future;
+    return future.whenComplete(() => _connectingFuture = null);
   }
 
   /// Parses all Caye packets in a single TCP segment and emits [ExtractionProgress] for each.
@@ -150,20 +243,74 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
       final String? json = _decryptPayload(encryptedBody);
 
       if (json != null) {
-        final decoded = jsonDecode(json) as Map<String, dynamic>;
-        if (const {0x20, 0x22, 0x23, 0x24, 0x35}.contains(functionCode)) {
-          _progressController.add(ExtractionProgress(code: functionCode, data: decoded));
+        // Not an unconditional cast — a response can decrypt to valid JSON
+        // that still isn't an object (seen live: sending the experimental
+        // 0x40/restart code got back a payload that decoded to `null`,
+        // which crashed the whole app here before this guard existed).
+        // Whatever function code is misunderstood/malformed still gets
+        // logged instead of taking down the app.
+        final decodedRaw = jsonDecode(json);
+        if (decodedRaw is! Map<String, dynamic>) {
+          Log.w(_tag,
+              '[Received] 0x${functionCode.toRadixString(16)} | non-object JSON, ignoring: $json');
+        } else {
+          final decoded = decodedRaw;
+          if (const {0x20, 0x22, 0x23, 0x24, 0x35, 0x03, 0x12, 0x30, 0x31}
+              .contains(functionCode)) {
+            _progressController.add(ExtractionProgress(code: functionCode, data: decoded));
+          }
+          if (functionCode == 0x12) {
+            Log.i(_tag, '[Rinsing Event Report] 0x12 | $json');
+            // On failure only — flat errorCode string array, no per-code
+            // status (see CayeFaultCode's class doc comment for why this
+            // shape needs describe(), not describeEntry()).
+            final errorCode = decoded['errorCode'];
+            if (errorCode is List) {
+              for (final code in errorCode) {
+                Log.i(_tag, '[Rinsing Event Report] 0x12 fault: ${CayeFaultCode.describe(code.toString())}');
+              }
+            }
+          } else if (functionCode == 0x03) {
+            Log.i(_tag, '[Cleaning Event Report] 0x03 | $json');
+          } else if (functionCode == 0x30) {
+            final errors = decoded['errors'];
+            if (errors is List) {
+              for (final entry in errors) {
+                if (entry is Map<String, dynamic>) {
+                  final code = entry['code']?.toString() ?? '?';
+                  final status = (entry['status'] as num?)?.toInt();
+                  Log.i(_tag, '[Fault Report] 0x30 | ${CayeFaultCode.describeEntry(code, status)}');
+                }
+              }
+            }
+          } else if (functionCode == 0x31) {
+            // Raw dump only, like 0x12/0x03 originally — the protocol doc
+            // describes what this carries (cleaning/rinsing wait-or-progress
+            // state, fault presence + list, overall brew-availability) but
+            // not the actual JSON key names, so this needs a live response
+            // first before it can be parsed/formatted the way 0x30 now is.
+            Log.i(_tag, '[Query Running Status] 0x31 | $json');
+          }
+          Log.long(_tag, '[Received] 0x${functionCode.toRadixString(16)} | $json');
         }
-        Log.long(_tag, '[Received] 0x${functionCode.toRadixString(16)} | $json');
       }
 
       offset = packetEnd;
     }
   }
 
-  /// Starts a 1-minute periodic timer that sends a time-sync command to keep the connection alive.
+  /// Starts a 1-minute periodic timer that sends a time-sync command to keep
+  /// the connection alive — and syncs once immediately on top of that,
+  /// since `Timer.periodic` alone would otherwise leave up to a full 60s gap
+  /// after every fresh connect (including a reconnect after a drop) before
+  /// the machine's own clock gets refreshed. That gap matters for anything
+  /// timestamp-sensitive sent right after a (re)connect: the replay-defense
+  /// header on every packet gets rejected if KDS's and the machine's clocks
+  /// drift past ~1 minute apart, and a 0x35 extraction-history query is
+  /// filtered by the MACHINE's own (possibly stale) clock, not the caller's.
   void _startHeartbeat(String ip) {
     _heartbeatTimer?.cancel();
+    unawaited(sendTimeSyncCommand(ip));
     _heartbeatTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       sendTimeSyncCommand(ip);
     });
@@ -174,6 +321,7 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
     _socket?.destroy();
     _socket = null;
     _heartbeatTimer?.cancel();
+    _isConnected = false;
     _connectionController.add(false);
     Log.d(_tag, 'Connection closed');
   }
@@ -210,8 +358,8 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
   Future<void> sendQueryStatus(String ip) => _sendPacket(ip, 0x31, {});
 
   @override
-  Future<void> sendTodayExtractionHistory(String ip) =>
-      _sendPacket(ip, 0x35, {});
+  Future<void> sendExtractionHistory(String ip, {required int startTs, required int endTs}) =>
+      _sendPacket(ip, 0x35, {'startTs': startTs, 'endTs': endTs});
 
   /// Closes the socket connection and all stream controllers.
   @override

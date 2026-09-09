@@ -1,6 +1,6 @@
 import 'package:injectable/injectable.dart';
-import 'package:kds/domain/exception/base_exception.dart';
-import 'package:kds/domain/exception/base_exception_handler.dart';
+import 'package:flowhub/domain/exception/base_exception.dart';
+import 'package:flowhub/domain/exception/base_exception_handler.dart';
 
 @Injectable(as: BaseExceptionHandler)
 class CommonExceptionHandler implements BaseExceptionHandler {

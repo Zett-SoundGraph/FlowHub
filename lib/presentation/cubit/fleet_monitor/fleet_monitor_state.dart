@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:kds/domain/repositories/order_repository.dart';
+import 'package:flowhub/domain/repositories/order_repository.dart';
 
 part 'fleet_monitor_state.freezed.dart';
 

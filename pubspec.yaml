@@ -1,4 +1,4 @@
-name: kds
+name: flowhub
 description: A new Flutter project.
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -50,6 +50,7 @@ dependencies:
   image: ^4.0.0
   qr_flutter: ^4.1.0
   mqtt_client: ^10.9.0
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
@@ -79,14 +80,19 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/data/recipe.csv
+    - assets/images/
 
   fonts:
-    - family: JetBrainsMono
+    - family: LineSeedJP
       fonts:
-        - asset: assets/fonts/JetBrainsMono-Regular.ttf
-        - asset: assets/fonts/JetBrainsMono-Bold.ttf
+        - asset: assets/fonts/LineSeedJP/LINESeedJP_A_OTF_Th.otf
+          weight: 100
+        - asset: assets/fonts/LineSeedJP/LINESeedJP_A_OTF_Rg.otf
+          weight: 400
+        - asset: assets/fonts/LineSeedJP/LINESeedJP_A_OTF_Bd.otf
           weight: 700
+        - asset: assets/fonts/LineSeedJP/LINESeedJP_A_OTF_Eb.otf
+          weight: 800
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

@@ -17,7 +17,11 @@ mixin _$ManufacturingQueueItem {
  String get machineIp; String get productKey; String get machineOrderNo;// format: "1001.01" — sent to Caye machine
  String get orderNo;// format: "1001" — used to look up KDS order list
  int get subItemIndex;// index within Order.items
- bool get isExtraShot; String get qrData;
+ bool get isExtraShot;// Skips the normal 2s "place cup" wait after the machine reports ready —
+// for the consecutive-shot test button (Caye Machine Control screen),
+// where cups aren't actually being swapped between shots so there's
+// nothing to wait for.
+ bool get skipReadyDelay; String get qrData;
 /// Create a copy of ManufacturingQueueItem
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +32,16 @@ $ManufacturingQueueItemCopyWith<ManufacturingQueueItem> get copyWith => _$Manufa
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ManufacturingQueueItem&&(identical(other.machineIp, machineIp) || other.machineIp == machineIp)&&(identical(other.productKey, productKey) || other.productKey == productKey)&&(identical(other.machineOrderNo, machineOrderNo) || other.machineOrderNo == machineOrderNo)&&(identical(other.orderNo, orderNo) || other.orderNo == orderNo)&&(identical(other.subItemIndex, subItemIndex) || other.subItemIndex == subItemIndex)&&(identical(other.isExtraShot, isExtraShot) || other.isExtraShot == isExtraShot)&&(identical(other.qrData, qrData) || other.qrData == qrData));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ManufacturingQueueItem&&(identical(other.machineIp, machineIp) || other.machineIp == machineIp)&&(identical(other.productKey, productKey) || other.productKey == productKey)&&(identical(other.machineOrderNo, machineOrderNo) || other.machineOrderNo == machineOrderNo)&&(identical(other.orderNo, orderNo) || other.orderNo == orderNo)&&(identical(other.subItemIndex, subItemIndex) || other.subItemIndex == subItemIndex)&&(identical(other.isExtraShot, isExtraShot) || other.isExtraShot == isExtraShot)&&(identical(other.skipReadyDelay, skipReadyDelay) || other.skipReadyDelay == skipReadyDelay)&&(identical(other.qrData, qrData) || other.qrData == qrData));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,machineIp,productKey,machineOrderNo,orderNo,subItemIndex,isExtraShot,qrData);
+int get hashCode => Object.hash(runtimeType,machineIp,productKey,machineOrderNo,orderNo,subItemIndex,isExtraShot,skipReadyDelay,qrData);
 
 @override
 String toString() {
-  return 'ManufacturingQueueItem(machineIp: $machineIp, productKey: $productKey, machineOrderNo: $machineOrderNo, orderNo: $orderNo, subItemIndex: $subItemIndex, isExtraShot: $isExtraShot, qrData: $qrData)';
+  return 'ManufacturingQueueItem(machineIp: $machineIp, productKey: $productKey, machineOrderNo: $machineOrderNo, orderNo: $orderNo, subItemIndex: $subItemIndex, isExtraShot: $isExtraShot, skipReadyDelay: $skipReadyDelay, qrData: $qrData)';
 }
 
 
@@ -48,7 +52,7 @@ abstract mixin class $ManufacturingQueueItemCopyWith<$Res>  {
   factory $ManufacturingQueueItemCopyWith(ManufacturingQueueItem value, $Res Function(ManufacturingQueueItem) _then) = _$ManufacturingQueueItemCopyWithImpl;
 @useResult
 $Res call({
- String machineIp, String productKey, String machineOrderNo, String orderNo, int subItemIndex, bool isExtraShot, String qrData
+ String machineIp, String productKey, String machineOrderNo, String orderNo, int subItemIndex, bool isExtraShot, bool skipReadyDelay, String qrData
 });
 
 
@@ -65,7 +69,7 @@ class _$ManufacturingQueueItemCopyWithImpl<$Res>
 
 /// Create a copy of ManufacturingQueueItem
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? machineIp = null,Object? productKey = null,Object? machineOrderNo = null,Object? orderNo = null,Object? subItemIndex = null,Object? isExtraShot = null,Object? qrData = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? machineIp = null,Object? productKey = null,Object? machineOrderNo = null,Object? orderNo = null,Object? subItemIndex = null,Object? isExtraShot = null,Object? skipReadyDelay = null,Object? qrData = null,}) {
   return _then(_self.copyWith(
 machineIp: null == machineIp ? _self.machineIp : machineIp // ignore: cast_nullable_to_non_nullable
 as String,productKey: null == productKey ? _self.productKey : productKey // ignore: cast_nullable_to_non_nullable
@@ -73,6 +77,7 @@ as String,machineOrderNo: null == machineOrderNo ? _self.machineOrderNo : machin
 as String,orderNo: null == orderNo ? _self.orderNo : orderNo // ignore: cast_nullable_to_non_nullable
 as String,subItemIndex: null == subItemIndex ? _self.subItemIndex : subItemIndex // ignore: cast_nullable_to_non_nullable
 as int,isExtraShot: null == isExtraShot ? _self.isExtraShot : isExtraShot // ignore: cast_nullable_to_non_nullable
+as bool,skipReadyDelay: null == skipReadyDelay ? _self.skipReadyDelay : skipReadyDelay // ignore: cast_nullable_to_non_nullable
 as bool,qrData: null == qrData ? _self.qrData : qrData // ignore: cast_nullable_to_non_nullable
 as String,
   ));
@@ -159,10 +164,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String machineIp,  String productKey,  String machineOrderNo,  String orderNo,  int subItemIndex,  bool isExtraShot,  String qrData)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String machineIp,  String productKey,  String machineOrderNo,  String orderNo,  int subItemIndex,  bool isExtraShot,  bool skipReadyDelay,  String qrData)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ManufacturingQueueItem() when $default != null:
-return $default(_that.machineIp,_that.productKey,_that.machineOrderNo,_that.orderNo,_that.subItemIndex,_that.isExtraShot,_that.qrData);case _:
+return $default(_that.machineIp,_that.productKey,_that.machineOrderNo,_that.orderNo,_that.subItemIndex,_that.isExtraShot,_that.skipReadyDelay,_that.qrData);case _:
   return orElse();
 
 }
@@ -180,10 +185,10 @@ return $default(_that.machineIp,_that.productKey,_that.machineOrderNo,_that.orde
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String machineIp,  String productKey,  String machineOrderNo,  String orderNo,  int subItemIndex,  bool isExtraShot,  String qrData)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String machineIp,  String productKey,  String machineOrderNo,  String orderNo,  int subItemIndex,  bool isExtraShot,  bool skipReadyDelay,  String qrData)  $default,) {final _that = this;
 switch (_that) {
 case _ManufacturingQueueItem():
-return $default(_that.machineIp,_that.productKey,_that.machineOrderNo,_that.orderNo,_that.subItemIndex,_that.isExtraShot,_that.qrData);case _:
+return $default(_that.machineIp,_that.productKey,_that.machineOrderNo,_that.orderNo,_that.subItemIndex,_that.isExtraShot,_that.skipReadyDelay,_that.qrData);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +205,10 @@ return $default(_that.machineIp,_that.productKey,_that.machineOrderNo,_that.orde
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String machineIp,  String productKey,  String machineOrderNo,  String orderNo,  int subItemIndex,  bool isExtraShot,  String qrData)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String machineIp,  String productKey,  String machineOrderNo,  String orderNo,  int subItemIndex,  bool isExtraShot,  bool skipReadyDelay,  String qrData)?  $default,) {final _that = this;
 switch (_that) {
 case _ManufacturingQueueItem() when $default != null:
-return $default(_that.machineIp,_that.productKey,_that.machineOrderNo,_that.orderNo,_that.subItemIndex,_that.isExtraShot,_that.qrData);case _:
+return $default(_that.machineIp,_that.productKey,_that.machineOrderNo,_that.orderNo,_that.subItemIndex,_that.isExtraShot,_that.skipReadyDelay,_that.qrData);case _:
   return null;
 
 }
@@ -215,7 +220,7 @@ return $default(_that.machineIp,_that.productKey,_that.machineOrderNo,_that.orde
 
 
 class _ManufacturingQueueItem implements ManufacturingQueueItem {
-  const _ManufacturingQueueItem({required this.machineIp, required this.productKey, required this.machineOrderNo, required this.orderNo, required this.subItemIndex, this.isExtraShot = false, this.qrData = ''});
+  const _ManufacturingQueueItem({required this.machineIp, required this.productKey, required this.machineOrderNo, required this.orderNo, required this.subItemIndex, this.isExtraShot = false, this.skipReadyDelay = false, this.qrData = ''});
   
 
 @override final  String machineIp;
@@ -227,6 +232,11 @@ class _ManufacturingQueueItem implements ManufacturingQueueItem {
 @override final  int subItemIndex;
 // index within Order.items
 @override@JsonKey() final  bool isExtraShot;
+// Skips the normal 2s "place cup" wait after the machine reports ready —
+// for the consecutive-shot test button (Caye Machine Control screen),
+// where cups aren't actually being swapped between shots so there's
+// nothing to wait for.
+@override@JsonKey() final  bool skipReadyDelay;
 @override@JsonKey() final  String qrData;
 
 /// Create a copy of ManufacturingQueueItem
@@ -239,16 +249,16 @@ _$ManufacturingQueueItemCopyWith<_ManufacturingQueueItem> get copyWith => __$Man
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ManufacturingQueueItem&&(identical(other.machineIp, machineIp) || other.machineIp == machineIp)&&(identical(other.productKey, productKey) || other.productKey == productKey)&&(identical(other.machineOrderNo, machineOrderNo) || other.machineOrderNo == machineOrderNo)&&(identical(other.orderNo, orderNo) || other.orderNo == orderNo)&&(identical(other.subItemIndex, subItemIndex) || other.subItemIndex == subItemIndex)&&(identical(other.isExtraShot, isExtraShot) || other.isExtraShot == isExtraShot)&&(identical(other.qrData, qrData) || other.qrData == qrData));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ManufacturingQueueItem&&(identical(other.machineIp, machineIp) || other.machineIp == machineIp)&&(identical(other.productKey, productKey) || other.productKey == productKey)&&(identical(other.machineOrderNo, machineOrderNo) || other.machineOrderNo == machineOrderNo)&&(identical(other.orderNo, orderNo) || other.orderNo == orderNo)&&(identical(other.subItemIndex, subItemIndex) || other.subItemIndex == subItemIndex)&&(identical(other.isExtraShot, isExtraShot) || other.isExtraShot == isExtraShot)&&(identical(other.skipReadyDelay, skipReadyDelay) || other.skipReadyDelay == skipReadyDelay)&&(identical(other.qrData, qrData) || other.qrData == qrData));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,machineIp,productKey,machineOrderNo,orderNo,subItemIndex,isExtraShot,qrData);
+int get hashCode => Object.hash(runtimeType,machineIp,productKey,machineOrderNo,orderNo,subItemIndex,isExtraShot,skipReadyDelay,qrData);
 
 @override
 String toString() {
-  return 'ManufacturingQueueItem(machineIp: $machineIp, productKey: $productKey, machineOrderNo: $machineOrderNo, orderNo: $orderNo, subItemIndex: $subItemIndex, isExtraShot: $isExtraShot, qrData: $qrData)';
+  return 'ManufacturingQueueItem(machineIp: $machineIp, productKey: $productKey, machineOrderNo: $machineOrderNo, orderNo: $orderNo, subItemIndex: $subItemIndex, isExtraShot: $isExtraShot, skipReadyDelay: $skipReadyDelay, qrData: $qrData)';
 }
 
 
@@ -259,7 +269,7 @@ abstract mixin class _$ManufacturingQueueItemCopyWith<$Res> implements $Manufact
   factory _$ManufacturingQueueItemCopyWith(_ManufacturingQueueItem value, $Res Function(_ManufacturingQueueItem) _then) = __$ManufacturingQueueItemCopyWithImpl;
 @override @useResult
 $Res call({
- String machineIp, String productKey, String machineOrderNo, String orderNo, int subItemIndex, bool isExtraShot, String qrData
+ String machineIp, String productKey, String machineOrderNo, String orderNo, int subItemIndex, bool isExtraShot, bool skipReadyDelay, String qrData
 });
 
 
@@ -276,7 +286,7 @@ class __$ManufacturingQueueItemCopyWithImpl<$Res>
 
 /// Create a copy of ManufacturingQueueItem
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? machineIp = null,Object? productKey = null,Object? machineOrderNo = null,Object? orderNo = null,Object? subItemIndex = null,Object? isExtraShot = null,Object? qrData = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? machineIp = null,Object? productKey = null,Object? machineOrderNo = null,Object? orderNo = null,Object? subItemIndex = null,Object? isExtraShot = null,Object? skipReadyDelay = null,Object? qrData = null,}) {
   return _then(_ManufacturingQueueItem(
 machineIp: null == machineIp ? _self.machineIp : machineIp // ignore: cast_nullable_to_non_nullable
 as String,productKey: null == productKey ? _self.productKey : productKey // ignore: cast_nullable_to_non_nullable
@@ -284,6 +294,7 @@ as String,machineOrderNo: null == machineOrderNo ? _self.machineOrderNo : machin
 as String,orderNo: null == orderNo ? _self.orderNo : orderNo // ignore: cast_nullable_to_non_nullable
 as String,subItemIndex: null == subItemIndex ? _self.subItemIndex : subItemIndex // ignore: cast_nullable_to_non_nullable
 as int,isExtraShot: null == isExtraShot ? _self.isExtraShot : isExtraShot // ignore: cast_nullable_to_non_nullable
+as bool,skipReadyDelay: null == skipReadyDelay ? _self.skipReadyDelay : skipReadyDelay // ignore: cast_nullable_to_non_nullable
 as bool,qrData: null == qrData ? _self.qrData : qrData // ignore: cast_nullable_to_non_nullable
 as String,
   ));

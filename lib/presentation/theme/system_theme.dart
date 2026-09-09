@@ -1,6 +1,6 @@
 // Inherited Widget for theme management
 import 'package:flutter/material.dart';
-import 'package:kds/presentation/theme/system_theme_data.dart';
+import 'package:flowhub/presentation/theme/system_theme_data.dart';
 
 class SystemTheme extends InheritedWidget {
   final ThemeMode themeMode;

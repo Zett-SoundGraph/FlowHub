@@ -14,7 +14,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CayeManagementState {
 
- bool get isConnected;
+ bool get isConnected;// Empty until the persisted key (if any) finishes loading — see
+// CayeManagementCubit's constructor.
+ String get apiKey;
 /// Create a copy of CayeManagementState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +27,16 @@ $CayeManagementStateCopyWith<CayeManagementState> get copyWith => _$CayeManageme
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CayeManagementState&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CayeManagementState&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.apiKey, apiKey) || other.apiKey == apiKey));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,isConnected);
+int get hashCode => Object.hash(runtimeType,isConnected,apiKey);
 
 @override
 String toString() {
-  return 'CayeManagementState(isConnected: $isConnected)';
+  return 'CayeManagementState(isConnected: $isConnected, apiKey: $apiKey)';
 }
 
 
@@ -45,7 +47,7 @@ abstract mixin class $CayeManagementStateCopyWith<$Res>  {
   factory $CayeManagementStateCopyWith(CayeManagementState value, $Res Function(CayeManagementState) _then) = _$CayeManagementStateCopyWithImpl;
 @useResult
 $Res call({
- bool isConnected
+ bool isConnected, String apiKey
 });
 
 
@@ -62,10 +64,11 @@ class _$CayeManagementStateCopyWithImpl<$Res>
 
 /// Create a copy of CayeManagementState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? isConnected = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? isConnected = null,Object? apiKey = null,}) {
   return _then(_self.copyWith(
 isConnected: null == isConnected ? _self.isConnected : isConnected // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,apiKey: null == apiKey ? _self.apiKey : apiKey // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 
@@ -150,10 +153,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool isConnected)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool isConnected,  String apiKey)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CayeManagementState() when $default != null:
-return $default(_that.isConnected);case _:
+return $default(_that.isConnected,_that.apiKey);case _:
   return orElse();
 
 }
@@ -171,10 +174,10 @@ return $default(_that.isConnected);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool isConnected)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool isConnected,  String apiKey)  $default,) {final _that = this;
 switch (_that) {
 case _CayeManagementState():
-return $default(_that.isConnected);case _:
+return $default(_that.isConnected,_that.apiKey);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -191,10 +194,10 @@ return $default(_that.isConnected);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool isConnected)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool isConnected,  String apiKey)?  $default,) {final _that = this;
 switch (_that) {
 case _CayeManagementState() when $default != null:
-return $default(_that.isConnected);case _:
+return $default(_that.isConnected,_that.apiKey);case _:
   return null;
 
 }
@@ -206,10 +209,13 @@ return $default(_that.isConnected);case _:
 
 
 class _CayeManagementState implements CayeManagementState {
-  const _CayeManagementState({this.isConnected = false});
+  const _CayeManagementState({this.isConnected = false, this.apiKey = ''});
   
 
 @override@JsonKey() final  bool isConnected;
+// Empty until the persisted key (if any) finishes loading — see
+// CayeManagementCubit's constructor.
+@override@JsonKey() final  String apiKey;
 
 /// Create a copy of CayeManagementState
 /// with the given fields replaced by the non-null parameter values.
@@ -221,16 +227,16 @@ _$CayeManagementStateCopyWith<_CayeManagementState> get copyWith => __$CayeManag
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CayeManagementState&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CayeManagementState&&(identical(other.isConnected, isConnected) || other.isConnected == isConnected)&&(identical(other.apiKey, apiKey) || other.apiKey == apiKey));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,isConnected);
+int get hashCode => Object.hash(runtimeType,isConnected,apiKey);
 
 @override
 String toString() {
-  return 'CayeManagementState(isConnected: $isConnected)';
+  return 'CayeManagementState(isConnected: $isConnected, apiKey: $apiKey)';
 }
 
 
@@ -241,7 +247,7 @@ abstract mixin class _$CayeManagementStateCopyWith<$Res> implements $CayeManagem
   factory _$CayeManagementStateCopyWith(_CayeManagementState value, $Res Function(_CayeManagementState) _then) = __$CayeManagementStateCopyWithImpl;
 @override @useResult
 $Res call({
- bool isConnected
+ bool isConnected, String apiKey
 });
 
 
@@ -258,10 +264,11 @@ class __$CayeManagementStateCopyWithImpl<$Res>
 
 /// Create a copy of CayeManagementState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? isConnected = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? isConnected = null,Object? apiKey = null,}) {
   return _then(_CayeManagementState(
 isConnected: null == isConnected ? _self.isConnected : isConnected // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,apiKey: null == apiKey ? _self.apiKey : apiKey // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 

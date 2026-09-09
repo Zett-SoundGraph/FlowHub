@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:kds/core/theme/app_theme.dart';
-import 'package:kds/domain/entities/menu_recipe/menu_recipe.dart';
-import 'package:kds/presentation/widgets/dashed_line_widget.dart';
+import 'package:flowhub/core/theme/app_theme.dart';
+import 'package:flowhub/domain/entities/menu_info/menu_info.dart';
+import 'package:flowhub/presentation/widgets/dashed_line_widget.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 /// Props data class for [OrderLabelWidget].
@@ -12,8 +12,9 @@ class OrderLabelWidgetProps {
   final String totalSequence;
   final List<String> menus;
   final String qrData;
-  final MenuRecipe? recipe;
-  final String dispenserData;
+  final List<MenuIngredient> ingredients;
+  final String version;
+  final String temp;
 
   const OrderLabelWidgetProps({
     required this.orderNo,
@@ -21,8 +22,9 @@ class OrderLabelWidgetProps {
     this.totalSequence = '01',
     required this.menus,
     required this.qrData,
-    this.recipe,
-    this.dispenserData = 'N:0',
+    this.ingredients = const [],
+    this.version = '',
+    this.temp = '',
   });
 }
 
@@ -32,9 +34,19 @@ class OrderLabelWidget extends StatelessWidget {
 
   const OrderLabelWidget({super.key, required this.props});
 
+  /// CSS `text-transform: capitalize` — uppercases only each word's first
+  /// letter, leaving the rest of the word untouched (unlike capitalize-and-
+  /// lowercase-rest, which would wrongly turn an already-correct abbreviation
+  /// like "ESP" into "Esp").
+  static String _capitalizeWords(String text) => text
+      .split(' ')
+      .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}')
+      .join(' ');
+
   @override
   Widget build(BuildContext context) {
     final String currentTime = DateTime.now().toString().substring(0, 19);
+    final bool hasOptions = props.ingredients.isNotEmpty;
 
     return Container(
       width: 384,
@@ -46,7 +58,11 @@ class OrderLabelWidget extends StatelessWidget {
           children: [
             // Left column: rotated order number + sequence
             Container(
-              padding: const EdgeInsets.only(left: 4.0, top: 12.0, right: 12.0),
+              padding: const EdgeInsets.only(
+                left: 10.0,
+                top: 40.0,
+                right: 10.0,
+              ),
               alignment: Alignment.topCenter,
               child: RotatedBox(
                 quarterTurns: 3,
@@ -65,10 +81,10 @@ class OrderLabelWidget extends StatelessWidget {
               ),
             ),
 
-            // Center: vertical dashed divider
+            // Center: vertical dashed divider — sits 20 from the QR column.
             const DashedLineWidget(),
 
-            const SizedBox(width: 12),
+            const SizedBox(width: 20.0),
 
             // Right column: QR code + product info + footer
             Expanded(
@@ -78,57 +94,63 @@ class OrderLabelWidget extends StatelessWidget {
                 children: [
                   const SizedBox(height: 8),
                   SizedBox(
-                    width: 120.0,
-                    height: 120.0,
+                    width: 112.0,
+                    height: 112.0,
                     child: QrImageView(
                       data: props.qrData.isNotEmpty ? props.qrData : props.orderNo,
-                      size: 120.0,
+                      size: 112.0,
                       padding: EdgeInsets.zero,
                       gapless: false,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  Text(
+                  const SizedBox(height: 20.0),
+                  const Text(
                     '[PRODUCT]',
-                    style: AppTextStyles.labelProduct.copyWith(fontWeight: FontWeight.w700),
+                    style: AppTextStyles.labelSectionHeader,
                   ),
+                  const SizedBox(height: 4.0),
                   Text(
-                    props.menus.isNotEmpty ? props.menus.first : '-',
-                    style: AppTextStyles.labelProduct.copyWith(fontSize: 20),
+                    _capitalizeWords(props.menus.isNotEmpty ? props.menus.first : '-'),
+                    style: AppTextStyles.labelMenuName,
                   ),
-                  Text(
-                    'Version: 0.94.0506.02',
-                    style: AppTextStyles.labelProduct.copyWith(fontSize: 20),
-                  ),
-                  const SizedBox(height: 12),
-                  if (props.recipe != null) ...[
+                  if (props.temp.isNotEmpty) ...[
+                    const SizedBox(height: 2.0),
                     Text(
-                      '[OPTION]',
-                      style: AppTextStyles.labelProduct.copyWith(fontWeight: FontWeight.w700),
+                      _capitalizeWords(props.temp),
+                      style: AppTextStyles.labelProduct,
                     ),
-                    ...props.recipe!.optionLines.map(
-                      (line) => Text(
-                        line,
-                        style: AppTextStyles.labelProduct.copyWith(fontSize: 20),
+                  ],
+                  const SizedBox(height: 2.0),
+                  Text(
+                    'Version: ${props.version}',
+                    style: AppTextStyles.labelProduct,
+                  ),
+                  if (hasOptions) ...[
+                    const SizedBox(height: 16.0),
+                    const Text(
+                      '[OPTION]',
+                      style: AppTextStyles.labelSectionHeader,
+                    ),
+                    const SizedBox(height: 4.0),
+                    ...props.ingredients.map(
+                      (ingredient) => Text(
+                        _capitalizeWords('- ${ingredient.name}: ${ingredient.amount}'),
+                        style: AppTextStyles.labelProduct,
                       ),
                     ),
-                    if (props.dispenserData.isNotEmpty && props.dispenserData != 'N:0') ...[
-                      () {
-                        final parts = props.dispenserData.split(':');
-                        if (parts.length == 2) {
-                          final name = parts[0].replaceAll('_', ' ').toUpperCase();
-                          return Text(
-                            '- $name: ${parts[1]}g',
-                            style: AppTextStyles.labelProduct.copyWith(fontSize: 20),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      }(),
-                    ],
                   ],
-                  const SizedBox(height: 36),
-                  Text('ORDER TIME: $currentTime', style: AppTextStyles.labelFooter),
-                  const Text('BUILD BY CAFE.BETA OS', style: AppTextStyles.labelFooter),
+                  // 32 from options' last line (or from Version, if there are
+                  // no options — either way it's always the previous Column
+                  // child), matching both reference images.
+                  const SizedBox(height: 32.0),
+                  Text(
+                    'ORDER TIME: $currentTime',
+                    style: AppTextStyles.labelFooter,
+                  ),
+                  const Text(
+                    'BUILD BY CAFE.BETA OS',
+                    style: AppTextStyles.labelFooter,
+                  ),
                   const SizedBox(height: 8),
                 ],
               ),

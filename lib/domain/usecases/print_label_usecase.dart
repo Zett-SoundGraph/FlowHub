@@ -2,9 +2,9 @@ import 'dart:typed_data';
 
 import 'package:fpdart/fpdart.dart' show Either, Left, Right;
 import 'package:injectable/injectable.dart';
-import 'package:kds/domain/exception/base_exception.dart';
-import 'package:kds/domain/repositories/printer_repository.dart';
-import 'package:kds/domain/usecases/usecase.dart';
+import 'package:flowhub/domain/exception/base_exception.dart';
+import 'package:flowhub/domain/repositories/printer_repository.dart';
+import 'package:flowhub/domain/usecases/usecase.dart';
 
 @injectable
 class PrintLabelUseCase extends UseCase<void, Uint8List> {

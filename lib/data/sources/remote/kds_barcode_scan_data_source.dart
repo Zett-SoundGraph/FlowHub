@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:injectable/injectable.dart';
-import 'package:kds/core/utils/log.dart';
+import 'package:flowhub/core/utils/log.dart';
 
 abstract interface class IBarcodeScanDataSource {
   Stream<String> get scanStream;
@@ -12,7 +12,7 @@ abstract interface class IBarcodeScanDataSource {
 @Singleton(as: IBarcodeScanDataSource)
 class KdsBarcodeScanDataSource implements IBarcodeScanDataSource {
   static const _tag = 'Scanner';
-  static const MethodChannel _channel = MethodChannel('com.sg.kds/scanner');
+  static const MethodChannel _channel = MethodChannel('com.sg.flowhub/scanner');
 
   final StreamController<String> _scanController =
       StreamController<String>.broadcast();

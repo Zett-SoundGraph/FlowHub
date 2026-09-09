@@ -1,5 +1,5 @@
 import 'package:injectable/injectable.dart';
-import 'package:kds/domain/repositories/order_repository.dart';
+import 'package:flowhub/domain/repositories/order_repository.dart';
 
 @injectable
 class ObserveOrderConnectionUseCase {

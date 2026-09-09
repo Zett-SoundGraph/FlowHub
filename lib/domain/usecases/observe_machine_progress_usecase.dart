@@ -1,7 +1,7 @@
 import 'package:injectable/injectable.dart';
-import 'package:kds/domain/entities/index.dart';
-import 'package:kds/domain/repositories/machine_repository.dart';
-import 'package:kds/domain/usecases/usecase.dart';
+import 'package:flowhub/domain/entities/index.dart';
+import 'package:flowhub/domain/repositories/machine_repository.dart';
+import 'package:flowhub/domain/usecases/usecase.dart';
 
 @injectable
 class ObserveMachineProgressUseCase extends StreamUseCase<ExtractionProgress> {
