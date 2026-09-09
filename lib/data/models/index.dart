@@ -1,1 +1,1 @@
-export 'order/order_raw.dart';
+export 'order/kiosk_order_raw.dart';

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kds/domain/enums/order_status.dart';
-import 'package:kds/presentation/cubit/kds/kds_cubit.dart';
-import 'package:kds/presentation/cubit/kds/kds_state.dart';
+import 'package:flowhub/domain/enums/order_status.dart';
+import 'package:flowhub/presentation/cubit/kds/kds_cubit.dart';
+import 'package:flowhub/presentation/cubit/kds/kds_state.dart';
 
 class ExtractionMonitorDialog extends StatelessWidget {
   final String orderNo;

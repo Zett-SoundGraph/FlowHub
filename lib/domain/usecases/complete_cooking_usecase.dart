@@ -1,9 +1,9 @@
 import 'package:fpdart/fpdart.dart' show Either, Left, Right;
 import 'package:injectable/injectable.dart' hide Order;
-import 'package:kds/domain/entities/index.dart';
-import 'package:kds/domain/exception/base_exception.dart';
-import 'package:kds/domain/repositories/index.dart';
-import 'package:kds/domain/usecases/usecase.dart';
+import 'package:flowhub/domain/entities/index.dart';
+import 'package:flowhub/domain/exception/base_exception.dart';
+import 'package:flowhub/domain/repositories/index.dart';
+import 'package:flowhub/domain/usecases/usecase.dart';
 
 typedef CompleteCookingParams = ({Order order, SubItem subItem});
 

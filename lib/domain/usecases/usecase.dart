@@ -1,7 +1,7 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:kds/core/di/service_locator.dart';
-import 'package:kds/domain/exception/base_exception.dart';
-import 'package:kds/domain/exception/base_exception_handler.dart';
+import 'package:flowhub/core/di/service_locator.dart';
+import 'package:flowhub/domain/exception/base_exception.dart';
+import 'package:flowhub/domain/exception/base_exception_handler.dart';
 
 abstract class UseCase<Type, Params> {
   BaseExceptionHandler? _exceptionHandler;

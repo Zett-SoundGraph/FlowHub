@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.kds"
+    namespace = "com.example.flowhub"
     compileSdk = 36
     ndkVersion = "27.0.12077973"
 
@@ -26,12 +26,12 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.kds"
+        applicationId = "com.example.flowhub"
         minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders["appName"] = "FlowHub KDS"
+        manifestPlaceholders["appName"] = "Cafe Beta FlowHub"
     }
 
     flavorDimensions += "env"
@@ -40,11 +40,11 @@ android {
             dimension = "env"
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
-            manifestPlaceholders["appName"] = "FlowHub KDS Dev"
+            manifestPlaceholders["appName"] = "Cafe Beta FlowHub Dev"
         }
         create("prod") {
             dimension = "env"
-            manifestPlaceholders["appName"] = "FlowHub KDS"
+            manifestPlaceholders["appName"] = "Cafe Beta FlowHub"
         }
     }
 

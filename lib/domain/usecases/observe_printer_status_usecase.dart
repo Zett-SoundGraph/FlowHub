@@ -1,6 +1,6 @@
 import 'package:injectable/injectable.dart' hide Order;
-import 'package:kds/domain/repositories/printer_repository.dart';
-import 'package:kds/domain/usecases/usecase.dart';
+import 'package:flowhub/domain/repositories/printer_repository.dart';
+import 'package:flowhub/domain/usecases/usecase.dart';
 
 @injectable
 class ObservePrinterStatusUseCase extends StreamUseCase<bool> {

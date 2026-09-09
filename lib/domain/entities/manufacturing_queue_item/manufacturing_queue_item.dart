@@ -11,6 +11,11 @@ abstract class ManufacturingQueueItem with _$ManufacturingQueueItem {
     required String orderNo, // format: "1001" — used to look up KDS order list
     required int subItemIndex, // index within Order.items
     @Default(false) bool isExtraShot,
+    // Skips the normal 2s "place cup" wait after the machine reports ready —
+    // for the consecutive-shot test button (Caye Machine Control screen),
+    // where cups aren't actually being swapped between shots so there's
+    // nothing to wait for.
+    @Default(false) bool skipReadyDelay,
     @Default('') String qrData, // QR payload for label printing
   }) = _ManufacturingQueueItem;
 }

@@ -1,17 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:kds/domain/entities/index.dart';
+import 'package:flowhub/domain/entities/index.dart';
 
 part 'kds_state.freezed.dart';
-
-Order _makeMockOrder(List<String> menus, int orderNo) {
-  final no = '$orderNo';
-  return Order(
-    orderNo: no,
-    rawOrderId: 'MOCK_$no',
-    drinkCount: menus.length,
-    items: menus.map((m) => SubItem.initial(m)).toList(),
-  );
-}
 
 @freezed
 abstract class KdsState with _$KdsState {
@@ -19,26 +9,22 @@ abstract class KdsState with _$KdsState {
     required List<Order> orders,
     @Default(false) bool isConnected,
     @Default(false) bool isLabelAttached,
+    @Default(false) bool isPrinterConnected,
+    @Default(false) bool isCayeConnected,
     @Default(false) bool isCalibrating,
+    @Default(920) int calibrationHeight,
     @Default(0) int manufacturingQueueLength,
+    // Consecutive-shot test progress (Caye Machine Control screen's test
+    // button) — local to whichever device the test is running on (leader
+    // only; see KdsCubit.startConsecutiveShotTest), not mirrored to
+    // followers via LeaderUpdateMessage. shotTestTotal == 0 means no test
+    // has been run this session.
+    @Default(0) int shotTestTotal,
+    @Default(0) int shotTestCompleted,
+    DateTime? shotTestStartedAt,
+    DateTime? shotTestFinishedAt,
     String? errorMessage,
   }) = _KdsState;
 
-  factory KdsState.initial() {
-    int seq = 1001;
-    return KdsState(
-      orders: [
-        _makeMockOrder(['ICED Americano'], seq++),
-        _makeMockOrder(['ICED Cafe Latte'], seq++),
-        _makeMockOrder(['Banana Milk Latte'], seq++),
-        _makeMockOrder(['Espresso'], seq++),
-        _makeMockOrder(['ICED Americano', 'ICED Cafe Latte'], seq++),
-        _makeMockOrder(['ICED Americano', 'Banana Milk Latte'], seq++),
-        _makeMockOrder(['ICED Cafe Latte', 'Banana Milk Latte'], seq++),
-        _makeMockOrder(['ICED Americano', 'ICED Americano'], seq++),
-        _makeMockOrder(['ICED Cafe Latte', 'ICED Cafe Latte'], seq++),
-        _makeMockOrder(['ICED Americano', 'ICED Cafe Latte', 'Banana Milk Latte'], seq++),
-      ],
-    );
-  }
+  factory KdsState.initial() => const KdsState(orders: []);
 }

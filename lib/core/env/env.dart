@@ -11,4 +11,8 @@ abstract class Env with _$Env {
   factory Env.prod({@Default("") String apiUrl}) = _EnvProd;
 
   factory Env.staging({@Default("") String apiUrl}) = _EnvStaging;
+
+  const Env._();
+
+  bool get isDev => this is _EnvDev;
 }

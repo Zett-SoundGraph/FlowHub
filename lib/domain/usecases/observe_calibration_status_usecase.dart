@@ -1,6 +1,6 @@
 import 'package:injectable/injectable.dart';
-import 'package:kds/domain/repositories/order_repository.dart';
-import 'package:kds/domain/usecases/usecase.dart';
+import 'package:flowhub/domain/repositories/order_repository.dart';
+import 'package:flowhub/domain/usecases/usecase.dart';
 
 @injectable
 class ObserveCalibrationStatusUseCase extends StreamUseCase<String> {

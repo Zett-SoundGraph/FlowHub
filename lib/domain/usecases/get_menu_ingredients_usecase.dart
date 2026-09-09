@@ -1,0 +1,18 @@
+import 'package:fpdart/fpdart.dart' show Either, Right;
+import 'package:injectable/injectable.dart' hide Order;
+import 'package:flowhub/domain/entities/menu_info/menu_info.dart';
+import 'package:flowhub/domain/exception/base_exception.dart';
+import 'package:flowhub/domain/repositories/menu_repository.dart';
+import 'package:flowhub/domain/usecases/usecase.dart';
+
+@injectable
+class GetMenuIngredientsUseCase extends UseCaseSync<List<MenuIngredient>, String> {
+  final MenuRepository _menuRepository;
+
+  GetMenuIngredientsUseCase(this._menuRepository);
+
+  @override
+  Either<BaseException, List<MenuIngredient>> call(String params) {
+    return Right(_menuRepository.getResolvedIngredients(params));
+  }
+}

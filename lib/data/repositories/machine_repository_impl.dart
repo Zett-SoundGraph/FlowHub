@@ -1,7 +1,7 @@
 import 'package:injectable/injectable.dart' hide Order;
-import 'package:kds/data/sources/remote/caye_machine_data_source.dart';
-import 'package:kds/domain/entities/index.dart';
-import 'package:kds/domain/repositories/machine_repository.dart';
+import 'package:flowhub/data/sources/remote/caye_machine_data_source.dart';
+import 'package:flowhub/domain/entities/index.dart';
+import 'package:flowhub/domain/repositories/machine_repository.dart';
 
 @Singleton(as: MachineRepository)
 class MachineRepositoryImpl implements MachineRepository {
@@ -14,6 +14,9 @@ class MachineRepositoryImpl implements MachineRepository {
 
   @override
   Stream<bool> get connectionStream => _dataSource.connectionStream;
+
+  @override
+  bool get isConnected => _dataSource.isConnected;
 
   @override
   Future<void> sendMakeCommand(String ip, String productKey, String orderNo) =>
@@ -44,8 +47,14 @@ class MachineRepositoryImpl implements MachineRepository {
       _dataSource.sendQueryStatus(ip);
 
   @override
-  Future<void> sendTodayExtractionHistory(String ip) =>
-      _dataSource.sendTodayExtractionHistory(ip);
+  Future<void> sendExtractionHistory(String ip, {required int startTs, required int endTs}) =>
+      _dataSource.sendExtractionHistory(ip, startTs: startTs, endTs: endTs);
+
+  @override
+  Future<void> setApiKey(String key) => _dataSource.setApiKey(key);
+
+  @override
+  Future<String> get currentApiKey => _dataSource.currentApiKey;
 
   @override
   void dispose() => _dataSource.dispose();

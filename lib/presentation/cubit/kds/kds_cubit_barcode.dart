@@ -1,51 +1,50 @@
 part of 'kds_cubit.dart';
 
 extension _KdsCubitBarcodeExtension on KdsCubit {
-  /// Parses a raw barcode string and routes it to [_startManufacturing].
-  /// 1. Detect pipe-delimited format (dispenser|orderNo.seq,pkey:X) or Base64 JSON
-  /// 2. Extract orderNo, pKey, targetIndex, shotCount, dispenserData
-  /// 3. Validate extracted fields — return early if invalid or order not found
-  /// 4. Guard against re-processing an already-extracting sub-item
-  /// 5. Resolve dispenser data from CSV recipe if not present in scan
-  /// 6. Delegate to [_startManufacturing] for the target sub-item
+  /// Parses the pipe-delimited label QR shared by every scan station (order
+  /// AND complete alike scan the same printed cup label) —
+  /// `dispenserData|orderNo.seq.totSeq,pkey:X` (see order_label_widget.dart).
+  /// Returns null if the string doesn't match this format at all.
+  ({String orderNo, int? seq, String pKey, String dispenserData})?
+  _parseLabelScan(String rawData) {
+    final dataToProcess = rawData.trim();
+    if (!dataToProcess.contains('|')) return null;
+
+    final parts = dataToProcess.split('|');
+    final dispenserData = parts[0];
+    final rightPart = parts.length > 1 ? parts[1] : '';
+    if (rightPart.isEmpty) return null;
+
+    final rightElements = rightPart.split(',');
+    final fullOrderId = rightElements[0];
+
+    final idParts = fullOrderId.split('.');
+    final orderNo = idParts[0];
+    int? seq;
+    if (idParts.length >= 2) {
+      seq = (int.tryParse(idParts[1]) ?? 1) - 1;
+    }
+
+    String pKey = '';
+    for (final el in rightElements) {
+      final lower = el.trim().toLowerCase();
+      if (lower.startsWith('pkey:')) {
+        pKey = el.split(':')[1];
+      }
+    }
+
+    if (orderNo.isEmpty) return null;
+    return (orderNo: orderNo, seq: seq, pKey: pKey, dispenserData: dispenserData);
+  }
+
+  /// Parses a raw order-station scan and routes it to [_startManufacturing].
+  /// 1. Parse the pipe-delimited label (or Base64 JSON, currently unused)
+  /// 2. Validate extracted fields — return early if invalid or order not found
+  /// 3. Guard against re-processing an already-extracting sub-item
+  /// 4. Delegate to [_startManufacturing] for the target sub-item
   void _handleBarcodeScan(String rawData) {
     Log.d('KDS', 'Barcode received: $rawData');
     try {
-      String dataToProcess = rawData.trim();
-      String orderNo = '';
-      String pKey = '';
-      String dispenserData = 'N:0';
-      int? targetIndex;
-      int shotCount = 0;
-
-      if (dataToProcess.contains('|')) {
-        final parts = dataToProcess.split('|');
-        dispenserData = parts[0];
-        final rightPart = parts.length > 1 ? parts[1] : '';
-
-        if (rightPart.isNotEmpty) {
-          final rightElements = rightPart.split(',');
-          final fullOrderId = rightElements[0];
-
-          final idParts = fullOrderId.split('.');
-          orderNo = idParts[0];
-          if (idParts.length >= 2) {
-            targetIndex = (int.tryParse(idParts[1]) ?? 1) - 1;
-          }
-
-          for (final el in rightElements) {
-            final lower = el.trim().toLowerCase();
-            if (lower.startsWith('pkey:')) {
-              pKey = el.split(':')[1];
-            }
-            // Extra-shot QR parsing was a temporary addition for continuous-extraction
-            // testing and is disabled — shotCount stays 0.
-            // else if (lower.startsWith('shot:')) {
-            //   shotCount = int.tryParse(el.split(':')[1]) ?? 0;
-            // }
-          }
-        }
-      }
       // Base64-encoded JSON scan format is unused — no code generates this format
       // (printed QR labels are always pipe-delimited, see order_label_widget.dart).
       // else {
@@ -54,6 +53,14 @@ extension _KdsCubitBarcodeExtension on KdsCubit {
       //   orderNo = scanData['orderNo'] as String;
       //   pKey = scanData['items'][0]['pKey'].toString();
       // }
+      final parsed = _parseLabelScan(rawData);
+      final orderNo = parsed?.orderNo ?? '';
+      final targetIndex = parsed?.seq;
+      final pKey = parsed?.pKey ?? '';
+      final dispenserData = parsed?.dispenserData ?? 'N:0';
+      // Extra-shot QR parsing was a temporary addition for continuous-extraction
+      // testing and is disabled — shotCount stays 0.
+      const shotCount = 0;
 
       Log.d('KDS', 'Scan parsed — order: $orderNo, pKey: $pKey, seq: $targetIndex, shot: $shotCount, dispenser: $dispenserData');
 
@@ -62,7 +69,9 @@ extension _KdsCubitBarcodeExtension on KdsCubit {
         return;
       }
 
-      final orderIndex = state.orders.indexWhere((o) => o.orderNo == orderNo);
+      final orderIndex = state.orders.indexWhere(
+        (o) => o.orderNo == orderNo || _qrOrderNo(o.orderNo) == orderNo,
+      );
       if (orderIndex == -1) {
         Log.w('KDS', 'Order $orderNo not found in list');
         return;
@@ -71,33 +80,80 @@ extension _KdsCubitBarcodeExtension on KdsCubit {
       final order = state.orders[orderIndex];
       final bool isTestOrder = orderNo.startsWith('9999') || orderNo.startsWith('9998');
 
-      // Falls back to CSV recipe dispenser data when the scan contains N:0.
-      String resolveDispenser(int itemIndex) {
-        if (dispenserData != 'N:0') return dispenserData;
-        final menuName = itemIndex < order.items.length ? order.items[itemIndex].menuName : '';
-        final recipe = menuName.isNotEmpty ? _getRecipe(menuName).fold((_) => null, (r) => r) : null;
-        final fallback = recipe?.dispenserData ?? 'N:0';
-        if (fallback != 'N:0') Log.d('KDS', 'Dispenser fallback: $menuName → $fallback');
-        return fallback;
-      }
-
       if (targetIndex != null && targetIndex >= 0 && targetIndex < order.items.length) {
         final subItem = order.items[targetIndex];
-        if (!isTestOrder && (subItem.status == OrderStatus.ready || subItem.isExtracting)) {
+        if (!isTestOrder &&
+            (subItem.status == OrderStatus.ready ||
+                this._isQueuedForManufacturing(order.orderNo, targetIndex))) {
           Log.w('KDS', 'Item already processing ($orderNo, seq ${targetIndex + 1})');
           return;
         }
-        this._startManufacturing(order, targetIndex, pKey, dispenserData: resolveDispenser(targetIndex), shotCount: shotCount);
+        this._startManufacturing(order, targetIndex, pKey, dispenserData: dispenserData, shotCount: shotCount);
       } else {
         for (int i = 0; i < order.items.length; i++) {
           final subItem = order.items[i];
-          if (!isTestOrder && (subItem.status == OrderStatus.ready || subItem.isExtracting)) continue;
-          this._startManufacturing(order, i, pKey, dispenserData: resolveDispenser(i), shotCount: shotCount);
+          if (!isTestOrder &&
+              (subItem.status == OrderStatus.ready || this._isQueuedForManufacturing(order.orderNo, i))) {
+            continue;
+          }
+          this._startManufacturing(order, i, pKey, dispenserData: dispenserData, shotCount: shotCount);
           break;
         }
       }
     } catch (e) {
       Log.e('KDS', 'Scan parse error: $e');
+    }
+  }
+
+  /// Parses a raw complete-station scan and marks that specific sub-item
+  /// ready (Call-eligible). This — not Caye's own 0x22 completion signal —
+  /// is now the single source of truth for "this drink is actually done"
+  /// across every production type (Caye-only, Nudof-only, and combo alike),
+  /// since it's the only signal that exists for all three. See
+  /// [_applyProgressToSubItem]'s status==3 branch for what Caye's own
+  /// signal still does instead (queue bookkeeping only).
+  void _handleQrComplete(String rawData) {
+    Log.d('KDS', 'Complete scan received: $rawData');
+    try {
+      final parsed = _parseLabelScan(rawData);
+      if (parsed == null || parsed.seq == null) {
+        Log.w('KDS', 'Invalid complete scan: missing orderNo or seq');
+        return;
+      }
+      final scannedOrderNo = parsed.orderNo;
+      final targetIndex = parsed.seq!;
+
+      final orderIndex = state.orders.indexWhere(
+        (o) => o.orderNo == scannedOrderNo || _qrOrderNo(o.orderNo) == scannedOrderNo,
+      );
+      if (orderIndex == -1) {
+        Log.w('KDS', 'Complete scan: order $scannedOrderNo not found');
+        return;
+      }
+      final order = state.orders[orderIndex];
+      if (targetIndex < 0 || targetIndex >= order.items.length) {
+        Log.w('KDS', 'Complete scan: seq ${targetIndex + 1} out of range for ${order.orderNo}');
+        return;
+      }
+
+      _updateSubItemByIndex(
+        order.orderNo,
+        targetIndex,
+        (s) => s.copyWith(
+          status: OrderStatus.ready,
+          progress: 1.0,
+          isExtracting: false,
+          currentStage: 'Complete',
+          // Stop the estimated-time gauge timer — otherwise the next tick
+          // would recompute from the (now stale) phase fields and drag this
+          // back down below 1.0 (see _tickGaugePhases).
+          phaseStartedAt: null,
+        ),
+        extraLog: 'Complete QR scanned',
+      );
+      unawaited(this._autoSendOrderReady(order.orderNo, targetIndex));
+    } catch (e) {
+      Log.e('KDS', 'Complete scan parse error: $e');
     }
   }
 
@@ -114,22 +170,35 @@ extension _KdsCubitBarcodeExtension on KdsCubit {
     String dispenserData = 'N:0',
     int shotCount = 0,
   }) {
-    const String machineIp = NetworkConstants.cayeMachineIp;
+    final String machineIp = NetworkConstants.cayeMachineIp;
     final String seq = (subItemIndex + 1).toString().padLeft(2, '0');
     final String totSeq = order.items.length.toString().padLeft(2, '0');
     final String machineOrderNo = '${order.orderNo}.$seq';
-    final String qrData = '$dispenserData|${order.orderNo}.$seq.$totSeq,pkey:$pKey';
+    final String qrData = '$dispenserData|${_qrOrderNo(order.orderNo)}.$seq.$totSeq,pkey:$pKey';
+
+    // This scan is the Nudof→Caye handoff for a combo item — Nudof's
+    // estimated-time phase (started at label-DETACH) ends here, snapping to
+    // exactly 0.25 as the floor the Caye phase's own estimated-time gauge
+    // will start from once the real 0x22 status=1 signal arrives (see
+    // _applyProgressToSubItem) — that phase isn't started here since the
+    // machine may still be busy with another queued item. Caye-only items
+    // never ran a Nudof phase, so their floor is just the default 0.0.
+    final isCombo = subItemIndex >= 0 &&
+        subItemIndex < order.items.length &&
+        _recipeTimingFor(order.items[subItemIndex]).productionType == ProductionType.combo;
 
     _updateSubItemByIndex(
       order.orderNo,
       subItemIndex,
       (s) => s.copyWith(
         isExtracting: true,
-        progress: 0.0,
+        progress: isCombo ? 0.25 : 0.0,
         isError: false,
         errorCode: null,
         status: OrderStatus.pending,
         currentStage: 'Pending',
+        phaseStartedAt: null,
+        phaseStartProgress: isCombo ? 0.25 : s.phaseStartProgress,
         logs: ['Added to brewing queue (pKey: $pKey${shotCount > 0 ? ' + $shotCount shot(s)' : ''})'],
       ),
     );

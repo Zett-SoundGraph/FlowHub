@@ -1,8 +1,8 @@
 import 'package:fpdart/fpdart.dart' show Either, Right;
 import 'package:injectable/injectable.dart';
-import 'package:kds/domain/exception/base_exception.dart';
-import 'package:kds/domain/repositories/machine_repository.dart';
-import 'package:kds/domain/usecases/usecase.dart';
+import 'package:flowhub/domain/exception/base_exception.dart';
+import 'package:flowhub/domain/repositories/machine_repository.dart';
+import 'package:flowhub/domain/usecases/usecase.dart';
 
 @injectable
 class DisposeMachineUseCase extends UseCaseSync<void, void> {

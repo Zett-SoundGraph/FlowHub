@@ -5,7 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:injectable/injectable.dart' hide Order;
-import 'package:kds/core/utils/log.dart';
+import 'package:flowhub/core/constants/flowhub_identity.dart';
+import 'package:flowhub/core/constants/local_subnet_resolver.dart';
+import 'package:flowhub/core/constants/network.dart';
+import 'package:flowhub/core/utils/log.dart';
 
 /// Converts raw PNG bytes into ESC/POS raster byte sequence.
 /// 1. Decode PNG into an image object
@@ -60,36 +63,90 @@ List<int> encodeImageToEscPos(Uint8List pngBytes) {
 }
 
 abstract interface class IPrinterDataSource {
-  /// Emits true when a label printer is attached, false when detached.
+  /// Emits true when a label is physically loaded in the printer (paper
+  /// sensor), false when removed — NOT connection status.
   Stream<bool> get statusStream;
+  /// Emits true on a successful connect (startup or a later manual
+  /// [reconnect]), false once the native side gives up after repeated
+  /// failed status-query attempts (e.g. the printer went to sleep or lost
+  /// power) — there's no automatic retry after that; [reconnect] is the
+  /// only way back to true.
+  Stream<bool> get connectionStream;
   Future<void> printLabel(Uint8List pngBytes);
   Future<void> printTest(List<String> menus);
+  /// Manually retries connecting — the Device Management screen's "off"
+  /// Label Printer row, tapped instead of waiting for whatever external
+  /// event (power back on) might let a future auto-retry succeed.
+  Future<void> reconnect();
+  /// Tells native whether a printed label is currently sitting in the
+  /// detach-wait queue. While true, native forwards every status poll tick
+  /// (not just changes) so a missed ATTACHED/DETACHED edge still
+  /// self-corrects on the very next tick; while false (the common, idle
+  /// case) native goes back to only reporting on real change.
+  Future<void> setAwaitingDetach(bool awaiting);
   void dispose();
 }
 
 @Singleton(as: IPrinterDataSource)
 class PrinterDataSource implements IPrinterDataSource {
   static const _tag = 'Printer';
-  static const _statusChannel = EventChannel('com.sg.kds/printer_status');
-  static const _actionChannel = MethodChannel('com.sg.kds/printer_action');
+  static const _statusChannel = EventChannel('com.sg.flowhub/printer_status');
+  static const _actionChannel = MethodChannel('com.sg.flowhub/printer_action');
 
   StreamSubscription? _statusSubscription;
   final StreamController<bool> _statusController = StreamController<bool>.broadcast();
+  final StreamController<bool> _connectionController = StreamController<bool>.broadcast();
 
   PrinterDataSource() {
+    // The printer is physically wired to the leader only — listening here
+    // is what triggers the native side's startMonitoring() (a real TCP
+    // connect attempt to the printer), so a follower must never even start
+    // listening, regardless of whether anything up the chain (KdsCubit)
+    // ends up subscribing to the streams this exposes. Gating at the
+    // subscription level alone isn't enough: DI constructs this singleton
+    // (and thus runs this constructor) the same way on both roles.
+    if (FlowHubIdentity.role == FlowHubRole.leader) {
+      unawaited(_initAndListen());
+    }
+  }
+
+  /// Waits for [LocalSubnetResolver] to confirm this site's real subnet (not
+  /// just its fallback-until-resolved default) before ever telling native
+  /// what address to dial — unlike MQTT/Caye, native's own printer-connect
+  /// retry gives up after 3 attempts with no further auto-retry, so a first
+  /// attempt made against a stale fallback (e.g. right after a cold boot,
+  /// before DHCP hands this device its address) would otherwise need a
+  /// manual Device Management tap to recover from instead of just working
+  /// once the network catches up.
+  Future<void> _initAndListen() async {
+    await LocalSubnetResolver.ready;
+    try {
+      await _actionChannel.invokeMethod('setPrinterIp', NetworkConstants.labelPrinterIp);
+    } on PlatformException catch (e) {
+      Log.e(_tag, 'setPrinterIp error: ${e.message}');
+    }
     _listenToStatusChannel();
   }
 
-  /// Subscribes to the native printer status EventChannel.
-  /// 1. Listen for ATTACHED / DETACHED string events
-  /// 2. Forward boolean value to [_statusController]
-  /// 3. Propagate channel errors downstream
+  /// Subscribes to the native printer status EventChannel, which carries two
+  /// unrelated kinds of events on the same channel:
+  /// 1. ATTACHED / DETACHED — the paper-sensor state (is a label loaded)
+  /// 2. CONNECTED / DISCONNECTED — the startup TCP connection attempt result
   void _listenToStatusChannel() {
     _statusSubscription = _statusChannel.receiveBroadcastStream().listen(
       (event) {
-        final bool attached = event == 'ATTACHED';
-        Log.d(_tag, 'Status: $event');
-        _statusController.add(attached);
+        switch (event) {
+          case 'ATTACHED':
+          case 'DETACHED':
+            final bool attached = event == 'ATTACHED';
+            Log.d(_tag, 'Status: $event');
+            _statusController.add(attached);
+          case 'CONNECTED':
+          case 'DISCONNECTED':
+            final bool connected = event == 'CONNECTED';
+            Log.d(_tag, 'Connection: $event');
+            _connectionController.add(connected);
+        }
       },
       onError: (error) {
         Log.e(_tag, 'Channel error: $error');
@@ -100,6 +157,9 @@ class PrinterDataSource implements IPrinterDataSource {
 
   @override
   Stream<bool> get statusStream => _statusController.stream;
+
+  @override
+  Stream<bool> get connectionStream => _connectionController.stream;
 
   /// Encodes [pngBytes] to ESC/POS raster format and sends to native printer.
   /// 1. Run [encodeImageToEscPos] on a background isolate via [compute]
@@ -128,9 +188,30 @@ class PrinterDataSource implements IPrinterDataSource {
     }
   }
 
+  /// Asks the native side to retry [startMonitoring] — a no-op there if
+  /// already connected, so this is safe to call regardless of current state.
+  @override
+  Future<void> reconnect() async {
+    try {
+      await _actionChannel.invokeMethod('reconnectPrinter');
+    } on PlatformException catch (e) {
+      Log.e(_tag, 'Reconnect error: ${e.message}');
+    }
+  }
+
+  @override
+  Future<void> setAwaitingDetach(bool awaiting) async {
+    try {
+      await _actionChannel.invokeMethod('setAwaitingDetach', awaiting);
+    } on PlatformException catch (e) {
+      Log.e(_tag, 'setAwaitingDetach error: ${e.message}');
+    }
+  }
+
   @override
   void dispose() {
     _statusSubscription?.cancel();
     _statusController.close();
+    _connectionController.close();
   }
 }
