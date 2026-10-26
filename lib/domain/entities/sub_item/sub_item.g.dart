@@ -36,6 +36,7 @@ _SubItem _$SubItemFromJson(Map<String, dynamic> json) => _SubItem(
   stage:
       $enumDecodeNullable(_$ProductionStageEnumMap, json['stage']) ??
       ProductionStage.none,
+  ledColorHex: json['ledColorHex'] as String?,
 );
 
 Map<String, dynamic> _$SubItemToJson(_SubItem instance) => <String, dynamic>{
@@ -56,6 +57,7 @@ Map<String, dynamic> _$SubItemToJson(_SubItem instance) => <String, dynamic>{
   'phaseTargetProgress': instance.phaseTargetProgress,
   'phaseDurationSeconds': instance.phaseDurationSeconds,
   'stage': _$ProductionStageEnumMap[instance.stage]!,
+  'ledColorHex': instance.ledColorHex,
 };
 
 const _$OrderStatusEnumMap = {

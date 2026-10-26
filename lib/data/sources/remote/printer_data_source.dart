@@ -101,7 +101,7 @@ class PrinterDataSource implements IPrinterDataSource {
     // The printer is physically wired to the leader only — listening here
     // is what triggers the native side's startMonitoring() (a real TCP
     // connect attempt to the printer), so a follower must never even start
-    // listening, regardless of whether anything up the chain (KdsCubit)
+    // listening, regardless of whether anything up the chain (FlowHubCubit)
     // ends up subscribing to the streams this exposes. Gating at the
     // subscription level alone isn't enough: DI constructs this singleton
     // (and thus runs this constructor) the same way on both roles.

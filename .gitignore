@@ -50,3 +50,7 @@ macos/Flutter/ephemeral/
 
 # Local secrets (see env.example.json for the template)
 env.json
+
+# Runtime-generated diagnostic/audit logs (DiagLogger, MqttOrderAuditLogger)
+diag_log_*.txt
+mqtt_order_audit_*.jsonl

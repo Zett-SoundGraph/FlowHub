@@ -17,7 +17,7 @@ mixin _$Order {
 
  String get orderNo; String get rawOrderId; String? get nickname;// From the kiosk order — carried through untouched so it can be
 // forwarded to display boards (e.g. Flow Board's status-bar copy) for
-// localization, even though nothing in KDS itself renders it yet.
+// localization, even though nothing in FlowHub itself renders it yet.
  String get language; List<SubItem> get items; int get drinkCount; int get foodCount; int get bottleCount; DateTime? get receivedAt; DateTime? get stateEnteredAt;
 /// Create a copy of Order
 /// with the given fields replaced by the non-null parameter values.
@@ -229,7 +229,7 @@ class _Order extends Order {
 @override final  String? nickname;
 // From the kiosk order — carried through untouched so it can be
 // forwarded to display boards (e.g. Flow Board's status-bar copy) for
-// localization, even though nothing in KDS itself renders it yet.
+// localization, even though nothing in FlowHub itself renders it yet.
 @override@JsonKey() final  String language;
  final  List<SubItem> _items;
 @override@JsonKey() List<SubItem> get items {

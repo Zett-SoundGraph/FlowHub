@@ -17,7 +17,7 @@ abstract interface class IOrderHistoryDataSource {
 
 /// Durable, append-only order-completion log for the exhibition period —
 /// survives a FlowHub Leader restart, unlike [Order] state itself which
-/// lives only in memory (see KdsState.initial()). One JSON object per line
+/// lives only in memory (see FlowHubState.initial()). One JSON object per line
 /// (JSONL) rather than a database: exhibition-scale volume (a few hundred
 /// orders/day) never needs the query power a real DB would add, and a plain
 /// append is simpler and can't corrupt earlier entries if the app is killed

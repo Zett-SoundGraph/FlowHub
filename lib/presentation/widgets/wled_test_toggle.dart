@@ -2,34 +2,38 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flowhub/core/di/di.dart';
+import 'package:flowhub/domain/enums/index.dart';
 import 'package:flowhub/domain/usecases/publish_wled_api_usecase.dart';
-import 'package:flowhub/domain/usecases/publish_wled_power_usecase.dart';
 
-/// TEMPORARY bench-test control for a WLED strip being tested over MQTT —
-/// not part of any real feature.
+/// Hidden for now — its "all-off" button sends a real `{"on":false}` to both
+/// guidance lights, which is exactly the actual-power-off behavior FlowHubCubit
+/// no longer does on purpose (see _wledIdleCommand's doc comment: toggling
+/// real power off/on is the suspected cause of Nudof's brownout reboots, so
+/// normal app flow now always keeps both lights powered and just changes
+/// color). Leaving this control reachable would let someone undo that by
+/// hand. Kept in the tree (not deleted) since it's still a useful bench tool
+/// — see flowhub_main_screen.dart's kWledTestToggleEnabled.
+const bool kWledTestToggleEnabled = false;
+
+/// Bench-test control for the Caye WLED unit, driven over MQTT via WLED's
+/// own JSON API (see PublishWledApiUseCase / MqttDataSource.publishWledApi).
+/// Hardcoded to [WledDevice.caye01] — this is a bring-up/debug tool, not the
+/// real per-drink guidance-light flow (see FlowHubCubit's label-detach and
+/// brew-complete handling for that).
 ///
-/// The power pill toggles ON/OFF via a plain "ON"/"OFF" string published to
-/// `beta/flowhub/wled/power` (see PublishWledPowerUseCase /
-/// MqttDataSource.publishWledPower). The 3 color circles below it each
-/// toggle a solid color via WLED's JSON API, published to
-/// `beta/flowhub/wled/power/api` (see PublishWledApiUseCase /
-/// MqttDataSource.publishWledApi) with `"transition":0` so the change is
-/// instant rather than fading — tapping an already-active color turns the
-/// strip off (`{"on":false}`) instead of re-sending the same color. The
-/// star button next to them fires saved preset 1 (`{"on":true,"ps":1}`) on
-/// the same topic. Point the WLED unit's own MQTT "Device Topic" setting at
-/// `beta/flowhub/wled/power` and it picks up both automatically (WLED's own
-/// convention: plain commands on the Device Topic itself, JSON API commands
-/// on Device Topic + "/api") — no extra parsing needed on the WLED side.
+/// The power pill toggles `{"on":true}` / `{"on":false}` for [_device] only.
+/// The all-off button below it instead sends `{"on":false}` to BOTH real
+/// guidance lights ([WledDevice.caye01] and [WledDevice.nudof01]) — added
+/// because a WLED unit powering back on after being unplugged resumes
+/// whatever color it last showed (its own "Turn LEDs on after power
+/// up/reset" setting), so bench-testing needs one quick way to force both
+/// back to a known-off state regardless of which one the power pill above
+/// happens to be scoped to. The star button fires saved preset 1
+/// (`{"on":true,"ps":1}`).
 ///
-/// Local-only toggle state (not synced via KdsState/LeaderUpdateMessage) —
+/// Local-only toggle state (not synced via FlowHubState/LeaderUpdateMessage) —
 /// this is a one-off physical bench test, not a feature that needs to agree
 /// across leader/follower devices.
-///
-/// Delete this file + its one call site + PublishWledPowerUseCase +
-/// PublishWledApiUseCase + publishWledPower/publishWledApi
-/// (mqtt_data_source.dart / order_repository*.dart) once WLED testing is
-/// done.
 class WledTestToggle extends StatefulWidget {
   final double scale;
 
@@ -39,66 +43,28 @@ class WledTestToggle extends StatefulWidget {
   State<WledTestToggle> createState() => _WledTestToggleState();
 }
 
-class _WledColorOption {
-  final String label;
-  final Color swatch;
-  final int r;
-  final int g;
-  final int b;
-
-  const _WledColorOption(this.label, this.swatch, this.r, this.g, this.b);
-}
-
-const _wledColorOptions = [
-  _WledColorOption('Red', Colors.red, 255, 0, 0),
-  _WledColorOption('Green', Colors.green, 0, 255, 0),
-  _WledColorOption('Blue', Colors.blue, 0, 0, 255),
-];
-
 class _WledTestToggleState extends State<WledTestToggle> {
-  final _publishWledPower = getIt<PublishWledPowerUseCase>();
+  static const _device = WledDevice.caye01;
+
   final _publishWledApi = getIt<PublishWledApiUseCase>();
   bool _isOn = false;
-  // Only one color can really be lit on the physical strip at a time —
-  // tracked here (rather than per-button) so picking a new color always
-  // correctly clears whichever one was previously shown as active.
-  _WledColorOption? _activeColor;
 
   void _togglePower() {
     final next = !_isOn;
     setState(() => _isOn = next);
-    unawaited(_publishWledPower(next));
+    unawaited(_publishWledApi(_device, {'on': next}));
   }
 
-  void _toggleColor(_WledColorOption option) {
-    if (_activeColor == option) {
-      setState(() => _activeColor = null);
-      unawaited(_publishWledApi(const {'on': false}));
-      return;
-    }
-    setState(() => _activeColor = option);
-    unawaited(_publishWledApi({
-      'on': true,
-      // No fade — see the request that added this: color buttons are for
-      // seeing each color immediately, not watching a transition.
-      'transition': 0,
-      'bri': 255,
-      'seg': [
-        {
-          'col': [
-            [option.r, option.g, option.b],
-          ],
-        },
-      ],
-    }));
+  /// Forces both real guidance lights off — see this class's doc comment.
+  void _turnOffAll() {
+    setState(() => _isOn = false);
+    unawaited(_publishWledApi(WledDevice.caye01, const {'on': false}));
+    unawaited(_publishWledApi(WledDevice.nudof01, const {'on': false}));
   }
 
   void _runPreset(int presetId) {
-    // A preset can be an animated effect, not just a solid color — the
-    // currently-highlighted color button would no longer reflect what's
-    // actually showing, so clear it.
-    setState(() => _activeColor = null);
-    unawaited(_publishWledApi({'on': true, 'ps': presetId}));
+    setState(() => _isOn = true);
+    unawaited(_publishWledApi(_device, {'on': true, 'ps': presetId}));
   }
 
   @override
@@ -161,15 +127,7 @@ class _WledTestToggleState extends State<WledTestToggle> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              for (final option in _wledColorOptions) ...[
-                if (option != _wledColorOptions.first) SizedBox(width: 8 * scale),
-                _WledColorButton(
-                  scale: scale,
-                  option: option,
-                  active: _activeColor == option,
-                  onTap: () => _toggleColor(option),
-                ),
-              ],
+              _WledAllOffButton(scale: scale, onTap: _turnOffAll),
               SizedBox(width: 8 * scale),
               _WledPresetButton(scale: scale, presetId: 1, onTap: () => _runPreset(1)),
             ],
@@ -180,40 +138,31 @@ class _WledTestToggleState extends State<WledTestToggle> {
   }
 }
 
-class _WledColorButton extends StatelessWidget {
+/// One-shot trigger — forces both real guidance lights (Caye + Nudof) off
+/// at once, for whenever a unit powers back on already lit (see this file's
+/// class doc comment). No "currently active" state to show, same as
+/// [_WledPresetButton].
+class _WledAllOffButton extends StatelessWidget {
   final double scale;
-  final _WledColorOption option;
-  final bool active;
   final VoidCallback onTap;
 
-  const _WledColorButton({
-    required this.scale,
-    required this.option,
-    required this.active,
-    required this.onTap,
-  });
+  const _WledAllOffButton({required this.scale, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: option.label,
+      message: 'All off',
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
         child: Container(
           width: 40 * scale,
           height: 40 * scale,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            color: option.swatch,
-            border: Border.all(
-              color: active ? Colors.white : Colors.transparent,
-              width: 3 * scale,
-            ),
+            color: Color(0xFF5C646C),
           ),
-          child: active
-              ? Icon(Icons.check, size: 20 * scale, color: Colors.white)
-              : null,
+          child: Icon(Icons.lightbulb_outline, size: 20 * scale, color: Colors.white),
         ),
       ),
     );
@@ -221,7 +170,7 @@ class _WledColorButton extends StatelessWidget {
 }
 
 /// One-shot trigger — presets can be animated effects, not just a solid
-/// color, so unlike [_WledColorButton] this has no "currently active" state
+/// color, so (like [_WledAllOffButton]) this has no "currently active" state
 /// to show (see [_WledTestToggleState._runPreset]).
 class _WledPresetButton extends StatelessWidget {
   final double scale;

@@ -1,13 +1,14 @@
 import 'package:injectable/injectable.dart' hide Order;
-// import 'package:flowhub/data/sources/remote/kds_barcode_scan_data_source.dart'; // replaced by WebSocket-based approach
-import 'package:flowhub/data/sources/remote/kds_socket_data_source.dart';
+// import 'package:flowhub/data/sources/remote/flowhub_barcode_scan_data_source.dart'; // replaced by WebSocket-based approach
+import 'package:flowhub/data/sources/remote/flowhub_socket_data_source.dart';
 import 'package:flowhub/data/sources/remote/mqtt_data_source.dart';
 import 'package:flowhub/domain/entities/index.dart';
+import 'package:flowhub/domain/enums/index.dart';
 import 'package:flowhub/domain/repositories/order_repository.dart';
 
 @Singleton(as: OrderRepository)
 class OrderRepositoryImpl implements OrderRepository {
-  final IKdsSocketDataSource _socketDataSource;
+  final IFlowHubSocketDataSource _socketDataSource;
   final IMqttDataSource _mqttDataSource;
   // final IBarcodeScanDataSource _barcodeScanDataSource; // replaced by WebSocket-based approach
 
@@ -55,8 +56,33 @@ class OrderRepositoryImpl implements OrderRepository {
   }
 
   @override
-  void sendStartCalibration(double height) =>
-      _mqttDataSource.publishStartCalibration(height);
+  void sendStartCalibration(
+    double height, {
+    required String displayModel,
+    required double edgeMarginMm,
+    double? displayWidthMm,
+    double? displayHeightMm,
+  }) =>
+      _mqttDataSource.publishStartCalibration(
+        height,
+        displayModel: displayModel,
+        edgeMarginMm: edgeMarginMm,
+        displayWidthMm: displayWidthMm,
+        displayHeightMm: displayHeightMm,
+      );
+
+  @override
+  Future<void> sendPickupTableTheme(PickupTableThemeSelection selection) =>
+      _mqttDataSource.publishPickupTableTheme(selection);
+
+  @override
+  Future<void> resetPickupTableTheme() => _mqttDataSource.publishPickupTableThemeReset();
+
+  @override
+  Future<void> createPickupTableTestOrders() => _mqttDataSource.publishCreateTestOrders();
+
+  @override
+  Future<void> clearPickupTableTestOrders() => _mqttDataSource.publishClearTestOrders();
 
   @override
   Future<void> publishLeaderUpdate(LeaderUpdateMessage message) =>
@@ -91,11 +117,16 @@ class OrderRepositoryImpl implements OrderRepository {
       _mqttDataSource.publishCayeCleaning(message);
 
   @override
-  Future<void> publishWledPower(bool on) => _mqttDataSource.publishWledPower(on);
+  Future<void> publishWledApi(WledDevice device, Map<String, dynamic> body) =>
+      _mqttDataSource.publishWledApi(device, body);
 
   @override
-  Future<void> publishWledApi(Map<String, dynamic> body) =>
-      _mqttDataSource.publishWledApi(body);
+  Stream<({WledDevice device, bool online})> get wledOnlineStream =>
+      _mqttDataSource.wledOnlineStream;
+
+  @override
+  Map<WledDevice, bool> get wledOnlineByDevice =>
+      _mqttDataSource.wledOnlineByDevice;
 
   @override
   void disconnect() {

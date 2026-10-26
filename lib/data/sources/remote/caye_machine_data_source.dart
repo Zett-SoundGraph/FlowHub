@@ -94,7 +94,10 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
   }
 
   Socket? _socket;
-  Timer? _heartbeatTimer;
+  // Self-rescheduling chain, not a Timer.periodic tied to any one
+  // connection — see _startHeartbeat's doc comment for why.
+  Timer? _heartbeatChainTimer;
+  String? _heartbeatIp;
   bool _isConnected = false;
   // Tracks an in-flight lazy-connect so two _sendPacket calls arriving
   // back-to-back while _socket is briefly null (e.g. right after a
@@ -299,28 +302,48 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
     }
   }
 
-  /// Starts a 1-minute periodic timer that sends a time-sync command to keep
-  /// the connection alive — and syncs once immediately on top of that,
-  /// since `Timer.periodic` alone would otherwise leave up to a full 60s gap
-  /// after every fresh connect (including a reconnect after a drop) before
-  /// the machine's own clock gets refreshed. That gap matters for anything
+  /// Keeps the coffee machine's session alive by resending a time-sync
+  /// (0x00) command roughly every 60s, matching the protocol's own documented
+  /// rule: the machine actively disconnects if it goes 3 minutes without one.
+  /// Also syncs once immediately on every fresh (re)connect — waiting for the
+  /// next scheduled tick would otherwise leave up to a full 60s gap before
+  /// the machine's clock gets refreshed, and that gap matters for anything
   /// timestamp-sensitive sent right after a (re)connect: the replay-defense
-  /// header on every packet gets rejected if KDS's and the machine's clocks
+  /// header on every packet gets rejected if FlowHub's and the machine's clocks
   /// drift past ~1 minute apart, and a 0x35 extraction-history query is
   /// filtered by the MACHINE's own (possibly stale) clock, not the caller's.
+  ///
+  /// This is a self-rescheduling chain (each send schedules the next one 60s
+  /// later), not a Timer.periodic owned by one connection — and unlike the
+  /// connection-scoped timer this replaces, [_handleDisconnect] does NOT
+  /// cancel it. A dropped connection used to silently kill the only thing
+  /// that could ever resend 0x00 again: nothing would revive it until some
+  /// unrelated command (a brew, a manual reconnect tap) happened to come in
+  /// on its own, which could leave the Device Management "off" indicator
+  /// stuck indefinitely during a quiet stretch with no orders. Now the chain
+  /// outlives any single connection — it keeps trying every 60s forever, and
+  /// each attempt reconnects on its own (via [_sendPacket]'s
+  /// `_socket == null` check) if the machine had dropped the session.
   void _startHeartbeat(String ip) {
-    _heartbeatTimer?.cancel();
+    _heartbeatIp = ip;
     unawaited(sendTimeSyncCommand(ip));
-    _heartbeatTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      sendTimeSyncCommand(ip);
-    });
+    _heartbeatChainTimer ??= Timer(const Duration(seconds: 60), _sendScheduledHeartbeat);
   }
 
-  /// Destroys the TCP socket, cancels the heartbeat, and emits disconnected state.
+  void _sendScheduledHeartbeat() {
+    final ip = _heartbeatIp;
+    if (ip != null) {
+      unawaited(sendTimeSyncCommand(ip));
+    }
+    _heartbeatChainTimer = Timer(const Duration(seconds: 60), _sendScheduledHeartbeat);
+  }
+
+  /// Destroys the TCP socket and emits disconnected state. Does NOT touch
+  /// [_heartbeatChainTimer] — see its owning method's doc comment for why
+  /// that has to keep running across a drop instead of dying with it.
   void _handleDisconnect() {
     _socket?.destroy();
     _socket = null;
-    _heartbeatTimer?.cancel();
     _isConnected = false;
     _connectionController.add(false);
     Log.d(_tag, 'Connection closed');
@@ -361,9 +384,11 @@ class CayeMachineDataSource implements ICayeMachineDataSource {
   Future<void> sendExtractionHistory(String ip, {required int startTs, required int endTs}) =>
       _sendPacket(ip, 0x35, {'startTs': startTs, 'endTs': endTs});
 
-  /// Closes the socket connection and all stream controllers.
+  /// Closes the socket connection, stops the heartbeat chain for good, and
+  /// closes all stream controllers.
   @override
   void dispose() {
+    _heartbeatChainTimer?.cancel();
     _handleDisconnect();
     _progressController.close();
     _connectionController.close();

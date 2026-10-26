@@ -15,6 +15,10 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$BoardUpdateMessage {
 
+// Generic receiver-group label, not a specific device — this is a
+// single broadcast both Flow Board and Pickup Board receive
+// identically, so neither one's own name alone fits here. Never read
+// by any receiver; purely a human-eyeballing label on a raw payload.
  String get boardName; String get eventId; int get version; List<BoardOrder> get orders;
 /// Create a copy of BoardUpdateMessage
 /// with the given fields replaced by the non-null parameter values.
@@ -212,9 +216,13 @@ return $default(_that.boardName,_that.eventId,_that.version,_that.orders);case _
 @JsonSerializable()
 
 class _BoardUpdateMessage implements BoardUpdateMessage {
-  const _BoardUpdateMessage({this.boardName = 'pickup_board', this.eventId = '', this.version = 0, final  List<BoardOrder> orders = const []}): _orders = orders;
+  const _BoardUpdateMessage({this.boardName = 'flowBoards', this.eventId = '', this.version = 0, final  List<BoardOrder> orders = const []}): _orders = orders;
   factory _BoardUpdateMessage.fromJson(Map<String, dynamic> json) => _$BoardUpdateMessageFromJson(json);
 
+// Generic receiver-group label, not a specific device — this is a
+// single broadcast both Flow Board and Pickup Board receive
+// identically, so neither one's own name alone fits here. Never read
+// by any receiver; purely a human-eyeballing label on a raw payload.
 @override@JsonKey() final  String boardName;
 @override@JsonKey() final  String eventId;
 @override@JsonKey() final  int version;
@@ -582,7 +590,7 @@ as List<BoardOrderItem>,
 mixin _$BoardOrderItem {
 
  int get seq; String get skuNo; String get temp;// Estimated-time (Nudof) or real-telemetry (Caye) progress, continuously
-// pushed by KDS — see SubItem's phase-tracking fields for how this is
+// pushed by FlowHub — see SubItem's phase-tracking fields for how this is
 // computed. Holds at 0.99 for any phase whose completion is confirmed by
 // a real signal rather than the estimate alone.
  double get progress;// Plain display name (e.g. "Cafe Latte") — for boards to fill the
@@ -801,7 +809,7 @@ class _BoardOrderItem implements BoardOrderItem {
 @override@JsonKey() final  String skuNo;
 @override@JsonKey() final  String temp;
 // Estimated-time (Nudof) or real-telemetry (Caye) progress, continuously
-// pushed by KDS — see SubItem's phase-tracking fields for how this is
+// pushed by FlowHub — see SubItem's phase-tracking fields for how this is
 // computed. Holds at 0.99 for any phase whose completion is confirmed by
 // a real signal rather than the estimate alone.
 @override@JsonKey() final  double progress;

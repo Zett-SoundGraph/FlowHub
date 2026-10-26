@@ -8,7 +8,7 @@
 /// entirely, so there's no separate value needed for that.
 ///
 /// `cayeCanceled` is a scaffold for a future manufacturing-cancel feature —
-/// nothing in this codebase sets it yet (see cancelBrewing in kds_cubit.dart,
+/// nothing in this codebase sets it yet (see cancelBrewing in flowhub_cubit.dart,
 /// which only sends the cancel command to the machine today).
 enum ProductionStage {
   none,

@@ -106,8 +106,8 @@ class CayeManagementCubit extends Cubit<CayeManagementState> {
   }
 
   /// On a follower, publishes a request for the (always-alive) leader
-  /// KdsCubit to dispatch instead — only the leader ever touches the real
-  /// Caye machine socket. See KdsCubit._handleFollowerSyncRequest.
+  /// FlowHubCubit to dispatch instead — only the leader ever touches the real
+  /// Caye machine socket. See FlowHubCubit._handleFollowerSyncRequest.
   void _requestSync(String syncType, Map<String, dynamic> params) {
     _followerSyncSeq++;
     unawaited(

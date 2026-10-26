@@ -8,7 +8,7 @@ part of 'board_update_message.dart';
 
 _BoardUpdateMessage _$BoardUpdateMessageFromJson(Map<String, dynamic> json) =>
     _BoardUpdateMessage(
-      boardName: json['boardName'] as String? ?? 'pickup_board',
+      boardName: json['boardName'] as String? ?? 'flowBoards',
       eventId: json['eventId'] as String? ?? '',
       version: (json['version'] as num?)?.toInt() ?? 0,
       orders:

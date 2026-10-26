@@ -71,7 +71,7 @@ abstract interface class IMenuSheetDataSource {
 /// (replacing the old bundled `recipe.csv`, which only ever covered a
 /// throwaway 4-item placeholder menu). Only the "Menu List", "Option List",
 /// "Group List" and "Category List" tabs are used — "Promotion List" and
-/// "Store List" aren't needed by the KDS.
+/// "Store List" aren't needed by the FlowHub.
 ///
 /// The "Version Info" tab's own CSV publish link is the fixed entry point:
 /// it lists every tab's last-updated timestamp plus its own publish-to-web

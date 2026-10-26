@@ -9,7 +9,7 @@ part of 'leader_update_message.dart';
 _LeaderUpdateMessage _$LeaderUpdateMessageFromJson(Map<String, dynamic> json) =>
     _LeaderUpdateMessage(
       updateType: json['updateType'] as String? ?? 'orders_snapshot',
-      boardName: json['boardName'] as String? ?? 'kds',
+      boardName: json['boardName'] as String? ?? 'flowhubF',
       eventId: json['eventId'] as String? ?? '',
       version: (json['version'] as num?)?.toInt() ?? 0,
       orders:

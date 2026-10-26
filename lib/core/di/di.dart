@@ -27,7 +27,7 @@ Future<void> setupLocator(Env env) async {
 
   // Resolves whether this build is the leader or a follower unit from its
   // own IP — must happen before anything reads NetworkConstants.mqttDeviceId
-  // (MQTT doesn't connect until KdsCubit initializes post-runApp, but
+  // (MQTT doesn't connect until FlowHubCubit initializes post-runApp, but
   // resolving it this early keeps the identity settled before DI wiring).
   await FlowHubIdentity.resolve();
 

@@ -7,7 +7,7 @@ part 'follower_sync_request.g.dart';
 /// Protocol.xlsx) — a follower's request for the leader to perform some
 /// action, since only the leader ever touches real hardware (Caye machine,
 /// printer) or owns the authoritative order state. [sync] identifies which
-/// action (see KdsCubit._handleFollowerSyncRequest for the full list); the
+/// action (see FlowHubCubit._handleFollowerSyncRequest for the full list); the
 /// leader executes it locally then broadcasts the result via
 /// [LeaderUpdateMessage] like any other change.
 @freezed

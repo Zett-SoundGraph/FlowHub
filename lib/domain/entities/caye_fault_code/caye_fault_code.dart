@@ -15,7 +15,7 @@
 class CayeFaultCode {
   const CayeFaultCode._();
 
-  // Prefix letter -> category label. Matches the KDS alert-tier split: E =
+  // Prefix letter -> category label. Matches the FlowHub alert-tier split: E =
   // red siren (stop service, call engineer), S = yellow alert (staff can
   // resolve on-site — refill beans/milk, empty the grounds bin), W =
   // maintenance reminder (no immediate action needed). An undocumented

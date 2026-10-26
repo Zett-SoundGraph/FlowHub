@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 mixin _$ManufacturingQueueItem {
 
  String get machineIp; String get productKey; String get machineOrderNo;// format: "1001.01" — sent to Caye machine
- String get orderNo;// format: "1001" — used to look up KDS order list
+ String get orderNo;// format: "1001" — used to look up FlowHub order list
  int get subItemIndex;// index within Order.items
  bool get isExtraShot;// Skips the normal 2s "place cup" wait after the machine reports ready —
 // for the consecutive-shot test button (Caye Machine Control screen),
@@ -228,7 +228,7 @@ class _ManufacturingQueueItem implements ManufacturingQueueItem {
 @override final  String machineOrderNo;
 // format: "1001.01" — sent to Caye machine
 @override final  String orderNo;
-// format: "1001" — used to look up KDS order list
+// format: "1001" — used to look up FlowHub order list
 @override final  int subItemIndex;
 // index within Order.items
 @override@JsonKey() final  bool isExtraShot;

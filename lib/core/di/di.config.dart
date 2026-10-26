@@ -13,34 +13,51 @@ import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
 import '../../data/exceptions/common_exception_handler.dart' as _i3;
+import '../../data/repositories/app_control_repository_impl.dart' as _i897;
+import '../../data/repositories/live_orders_snapshot_repository_impl.dart'
+    as _i11;
 import '../../data/repositories/machine_repository_impl.dart' as _i1003;
 import '../../data/repositories/menu_repository_impl.dart' as _i668;
+import '../../data/repositories/nudof_repository_impl.dart' as _i315;
 import '../../data/repositories/order_history_repository_impl.dart' as _i1008;
 import '../../data/repositories/order_repository_impl.dart' as _i717;
 import '../../data/repositories/printer_repository_impl.dart' as _i514;
 import '../../data/repositories/receipt_printer_repository_impl.dart' as _i211;
 import '../../data/sources/local/caye_key_data_source.dart' as _i819;
+import '../../data/sources/local/live_orders_snapshot_data_source.dart'
+    as _i899;
 import '../../data/sources/local/order_history_data_source.dart' as _i871;
+import '../../data/sources/remote/app_control_data_source.dart' as _i82;
 import '../../data/sources/remote/caye_machine_data_source.dart' as _i422;
-import '../../data/sources/remote/kds_barcode_scan_data_source.dart' as _i792;
-import '../../data/sources/remote/kds_socket_data_source.dart' as _i919;
+import '../../data/sources/remote/flowhub_barcode_scan_data_source.dart'
+    as _i637;
+import '../../data/sources/remote/flowhub_socket_data_source.dart' as _i722;
 import '../../data/sources/remote/menu_sheet_data_source.dart' as _i25;
 import '../../data/sources/remote/mqtt_data_source.dart' as _i126;
 import '../../data/sources/remote/printer_data_source.dart' as _i656;
 import '../../data/sources/remote/receipt_printer_data_source.dart' as _i879;
 import '../../domain/exception/base_exception_handler.dart' as _i543;
+import '../../domain/repositories/app_control_repository.dart' as _i617;
 import '../../domain/repositories/index.dart' as _i445;
+import '../../domain/repositories/live_orders_snapshot_repository.dart'
+    as _i604;
 import '../../domain/repositories/machine_repository.dart' as _i958;
 import '../../domain/repositories/menu_repository.dart' as _i196;
+import '../../domain/repositories/nudof_repository.dart' as _i143;
 import '../../domain/repositories/order_history_repository.dart' as _i158;
 import '../../domain/repositories/order_repository.dart' as _i507;
 import '../../domain/repositories/printer_repository.dart' as _i115;
 import '../../domain/repositories/receipt_printer_repository.dart' as _i85;
 import '../../domain/usecases/append_order_history_usecase.dart' as _i7;
 import '../../domain/usecases/check_machine_availability_usecase.dart' as _i893;
+import '../../domain/usecases/clear_live_orders_snapshot_usecase.dart' as _i132;
+import '../../domain/usecases/clear_pickup_table_test_orders_usecase.dart'
+    as _i394;
 import '../../domain/usecases/complete_cooking_usecase.dart' as _i110;
 import '../../domain/usecases/complete_pickup_usecase.dart' as _i500;
 import '../../domain/usecases/connect_order_socket_usecase.dart' as _i6;
+import '../../domain/usecases/create_pickup_table_test_orders_usecase.dart'
+    as _i269;
 import '../../domain/usecases/disconnect_order_socket_usecase.dart' as _i479;
 import '../../domain/usecases/dispose_machine_usecase.dart' as _i135;
 import '../../domain/usecases/dispose_printer_usecase.dart' as _i517;
@@ -52,6 +69,7 @@ import '../../domain/usecases/get_machine_connection_snapshot_usecase.dart'
 import '../../domain/usecases/get_menu_info_by_sku_usecase.dart' as _i212;
 import '../../domain/usecases/get_menu_info_usecase.dart' as _i586;
 import '../../domain/usecases/get_menu_ingredients_usecase.dart' as _i33;
+import '../../domain/usecases/get_nudof_online_snapshot_usecase.dart' as _i193;
 import '../../domain/usecases/get_recipe_dispenser_usecase.dart' as _i624;
 import '../../domain/usecases/get_recipe_image_usecase.dart' as _i308;
 import '../../domain/usecases/get_recipe_ingredient_labels_usecase.dart'
@@ -60,6 +78,8 @@ import '../../domain/usecases/get_recipe_popup_ingredients_usecase.dart'
     as _i996;
 import '../../domain/usecases/get_recipe_timing_usecase.dart' as _i534;
 import '../../domain/usecases/get_recipe_version_usecase.dart' as _i279;
+import '../../domain/usecases/get_wled_online_snapshot_usecase.dart' as _i35;
+import '../../domain/usecases/load_live_orders_snapshot_usecase.dart' as _i657;
 import '../../domain/usecases/observe_barcode_scan_usecase.dart' as _i174;
 import '../../domain/usecases/observe_calibration_status_usecase.dart' as _i5;
 import '../../domain/usecases/observe_fleet_heartbeats_usecase.dart' as _i398;
@@ -69,11 +89,14 @@ import '../../domain/usecases/observe_kiosk_order_usecase.dart' as _i999;
 import '../../domain/usecases/observe_leader_update_usecase.dart' as _i606;
 import '../../domain/usecases/observe_machine_connection_usecase.dart' as _i847;
 import '../../domain/usecases/observe_machine_progress_usecase.dart' as _i804;
+import '../../domain/usecases/observe_nudof_online_usecase.dart' as _i1055;
+import '../../domain/usecases/observe_nudof_power_usecase.dart' as _i993;
 import '../../domain/usecases/observe_order_connection_usecase.dart' as _i628;
 import '../../domain/usecases/observe_pickup_complete_usecase.dart' as _i640;
 import '../../domain/usecases/observe_printer_connection_usecase.dart' as _i397;
 import '../../domain/usecases/observe_printer_status_usecase.dart' as _i328;
 import '../../domain/usecases/observe_qr_complete_usecase.dart' as _i754;
+import '../../domain/usecases/observe_wled_online_usecase.dart' as _i486;
 import '../../domain/usecases/print_label_usecase.dart' as _i413;
 import '../../domain/usecases/print_receipt_usecase.dart' as _i537;
 import '../../domain/usecases/publish_board_update_usecase.dart' as _i836;
@@ -85,24 +108,31 @@ import '../../domain/usecases/publish_follower_sync_usecase.dart' as _i878;
 import '../../domain/usecases/publish_kiosk_update_usecase.dart' as _i265;
 import '../../domain/usecases/publish_leader_update_usecase.dart' as _i563;
 import '../../domain/usecases/publish_wled_api_usecase.dart' as _i761;
-import '../../domain/usecases/publish_wled_power_usecase.dart' as _i130;
 import '../../domain/usecases/reconnect_printer_usecase.dart' as _i593;
+import '../../domain/usecases/reset_pickup_table_theme_usecase.dart' as _i53;
 import '../../domain/usecases/resolve_menu_options_usecase.dart' as _i617;
+import '../../domain/usecases/restart_app_usecase.dart' as _i703;
+import '../../domain/usecases/save_live_orders_snapshot_usecase.dart' as _i28;
 import '../../domain/usecases/send_cancel_command_usecase.dart' as _i622;
 import '../../domain/usecases/send_cleaning_command_usecase.dart' as _i682;
 import '../../domain/usecases/send_extraction_history_usecase.dart' as _i819;
 import '../../domain/usecases/send_make_command_usecase.dart' as _i1052;
+import '../../domain/usecases/send_pickup_table_theme_usecase.dart' as _i356;
 import '../../domain/usecases/send_query_status_usecase.dart' as _i460;
 import '../../domain/usecases/send_rinsing_command_usecase.dart' as _i68;
 import '../../domain/usecases/send_time_sync_usecase.dart' as _i627;
 import '../../domain/usecases/set_awaiting_detach_usecase.dart' as _i900;
 import '../../domain/usecases/set_caye_api_key_usecase.dart' as _i189;
+import '../../domain/usecases/set_nudof_power_usecase.dart' as _i875;
 import '../../domain/usecases/start_calibration_usecase.dart' as _i583;
 import '../../domain/usecases/sync_recipe_data_usecase.dart' as _i248;
 import '../../presentation/cubit/caye/caye_management_cubit.dart' as _i776;
 import '../../presentation/cubit/fleet_monitor/fleet_monitor_cubit.dart'
     as _i102;
-import '../../presentation/cubit/kds/kds_cubit.dart' as _i807;
+import '../../presentation/cubit/flowhub/flowhub_cubit.dart' as _i112;
+import '../../presentation/cubit/nudof/nudof_control_cubit.dart' as _i655;
+import '../../presentation/cubit/pickup_table_theme/pickup_table_theme_cubit.dart'
+    as _i414;
 
 // initializes the registration of main-scope dependencies inside of GetIt
 _i174.GetIt $initGetIt(
@@ -112,22 +142,37 @@ _i174.GetIt $initGetIt(
 }) {
   final gh = _i526.GetItHelper(getIt, environment, environmentFilter);
   gh.factory<_i543.BaseExceptionHandler>(() => _i3.CommonExceptionHandler());
+  gh.singleton<_i722.IFlowHubSocketDataSource>(
+    () => _i722.FlowHubSocketDataSource(),
+  );
   gh.singleton<_i25.IMenuSheetDataSource>(() => _i25.MenuSheetDataSource());
   gh.singleton<_i819.ICayeKeyDataSource>(() => _i819.CayeKeyDataSource());
+  gh.singleton<_i82.IAppControlDataSource>(() => _i82.AppControlDataSource());
   gh.singleton<_i126.IMqttDataSource>(() => _i126.MqttDataSource());
-  gh.singleton<_i919.IKdsSocketDataSource>(() => _i919.KdsSocketDataSource());
+  gh.singleton<_i637.IBarcodeScanDataSource>(
+    () => _i637.FlowHubBarcodeScanDataSource(),
+  );
   gh.singleton<_i422.ICayeMachineDataSource>(
     () => _i422.CayeMachineDataSource(gh<_i819.ICayeKeyDataSource>()),
   );
   gh.singleton<_i656.IPrinterDataSource>(() => _i656.PrinterDataSource());
-  gh.singleton<_i792.IBarcodeScanDataSource>(
-    () => _i792.KdsBarcodeScanDataSource(),
+  gh.singleton<_i507.OrderRepository>(
+    () => _i717.OrderRepositoryImpl(
+      gh<_i722.IFlowHubSocketDataSource>(),
+      gh<_i126.IMqttDataSource>(),
+    ),
+  );
+  gh.singleton<_i617.AppControlRepository>(
+    () => _i897.AppControlRepositoryImpl(gh<_i82.IAppControlDataSource>()),
   );
   gh.singleton<_i115.PrinterRepository>(
     () => _i514.PrinterRepositoryImpl(gh<_i656.IPrinterDataSource>()),
   );
   gh.singleton<_i871.IOrderHistoryDataSource>(
     () => _i871.OrderHistoryDataSource(),
+  );
+  gh.singleton<_i899.ILiveOrdersSnapshotDataSource>(
+    () => _i899.LiveOrdersSnapshotDataSource(),
   );
   gh.singleton<_i879.IReceiptPrinterDataSource>(
     () => _i879.ReceiptPrinterDataSource(),
@@ -194,6 +239,9 @@ _i174.GetIt $initGetIt(
   gh.factory<_i189.SetCayeApiKeyUseCase>(
     () => _i189.SetCayeApiKeyUseCase(gh<_i958.MachineRepository>()),
   );
+  gh.factory<_i703.RestartAppUseCase>(
+    () => _i703.RestartAppUseCase(gh<_i617.AppControlRepository>()),
+  );
   gh.singleton<_i158.OrderHistoryRepository>(
     () =>
         _i1008.OrderHistoryRepositoryImpl(gh<_i871.IOrderHistoryDataSource>()),
@@ -201,16 +249,25 @@ _i174.GetIt $initGetIt(
   gh.singleton<_i196.MenuRepository>(
     () => _i668.MenuRepositoryImpl(gh<_i25.IMenuSheetDataSource>()),
   );
+  gh.singleton<_i143.NudofRepository>(
+    () => _i315.NudofRepositoryImpl(gh<_i126.IMqttDataSource>()),
+  );
   gh.singleton<_i85.ReceiptPrinterRepository>(
     () => _i211.ReceiptPrinterRepositoryImpl(
       gh<_i879.IReceiptPrinterDataSource>(),
     ),
   );
-  gh.singleton<_i507.OrderRepository>(
-    () => _i717.OrderRepositoryImpl(
-      gh<_i919.IKdsSocketDataSource>(),
-      gh<_i126.IMqttDataSource>(),
-    ),
+  gh.factory<_i193.GetNudofOnlineSnapshotUseCase>(
+    () => _i193.GetNudofOnlineSnapshotUseCase(gh<_i143.NudofRepository>()),
+  );
+  gh.factory<_i1055.ObserveNudofOnlineUseCase>(
+    () => _i1055.ObserveNudofOnlineUseCase(gh<_i143.NudofRepository>()),
+  );
+  gh.factory<_i993.ObserveNudofPowerUseCase>(
+    () => _i993.ObserveNudofPowerUseCase(gh<_i143.NudofRepository>()),
+  );
+  gh.factory<_i875.SetNudofPowerUseCase>(
+    () => _i875.SetNudofPowerUseCase(gh<_i143.NudofRepository>()),
   );
   gh.factory<_i6.ConnectOrderSocketUseCase>(
     () => _i6.ConnectOrderSocketUseCase(gh<_i507.OrderRepository>()),
@@ -260,9 +317,6 @@ _i174.GetIt $initGetIt(
   gh.factory<_i761.PublishWledApiUseCase>(
     () => _i761.PublishWledApiUseCase(gh<_i507.OrderRepository>()),
   );
-  gh.factory<_i130.PublishWledPowerUseCase>(
-    () => _i130.PublishWledPowerUseCase(gh<_i507.OrderRepository>()),
-  );
   gh.factory<_i583.StartCalibrationUseCase>(
     () => _i583.StartCalibrationUseCase(gh<_i507.OrderRepository>()),
   );
@@ -274,6 +328,15 @@ _i174.GetIt $initGetIt(
   );
   gh.factory<_i537.PrintReceiptUseCase>(
     () => _i537.PrintReceiptUseCase(gh<_i85.ReceiptPrinterRepository>()),
+  );
+  gh.factory<_i394.ClearPickupTableTestOrdersUseCase>(
+    () => _i394.ClearPickupTableTestOrdersUseCase(gh<_i507.OrderRepository>()),
+  );
+  gh.factory<_i269.CreatePickupTableTestOrdersUseCase>(
+    () => _i269.CreatePickupTableTestOrdersUseCase(gh<_i507.OrderRepository>()),
+  );
+  gh.factory<_i35.GetWledOnlineSnapshotUseCase>(
+    () => _i35.GetWledOnlineSnapshotUseCase(gh<_i507.OrderRepository>()),
   );
   gh.factory<_i174.ObserveBarcodeScanUseCase>(
     () => _i174.ObserveBarcodeScanUseCase(gh<_i507.OrderRepository>()),
@@ -290,6 +353,20 @@ _i174.GetIt $initGetIt(
   gh.factory<_i754.ObserveQrCompleteUseCase>(
     () => _i754.ObserveQrCompleteUseCase(gh<_i507.OrderRepository>()),
   );
+  gh.factory<_i486.ObserveWledOnlineUseCase>(
+    () => _i486.ObserveWledOnlineUseCase(gh<_i507.OrderRepository>()),
+  );
+  gh.factory<_i53.ResetPickupTableThemeUseCase>(
+    () => _i53.ResetPickupTableThemeUseCase(gh<_i507.OrderRepository>()),
+  );
+  gh.factory<_i356.SendPickupTableThemeUseCase>(
+    () => _i356.SendPickupTableThemeUseCase(gh<_i507.OrderRepository>()),
+  );
+  gh.singleton<_i604.LiveOrdersSnapshotRepository>(
+    () => _i11.LiveOrdersSnapshotRepositoryImpl(
+      gh<_i899.ILiveOrdersSnapshotDataSource>(),
+    ),
+  );
   gh.factory<_i102.FleetMonitorCubit>(
     () => _i102.FleetMonitorCubit(
       getFleetSnapshot: gh<_i26.GetFleetSnapshotUseCase>(),
@@ -301,6 +378,14 @@ _i174.GetIt $initGetIt(
   );
   gh.factory<_i7.AppendOrderHistoryUseCase>(
     () => _i7.AppendOrderHistoryUseCase(gh<_i158.OrderHistoryRepository>()),
+  );
+  gh.factory<_i414.PickupTableThemeCubit>(
+    () => _i414.PickupTableThemeCubit(
+      sendTheme: gh<_i356.SendPickupTableThemeUseCase>(),
+      resetTheme: gh<_i53.ResetPickupTableThemeUseCase>(),
+      createTestOrders: gh<_i269.CreatePickupTableTestOrdersUseCase>(),
+      clearTestOrders: gh<_i394.ClearPickupTableTestOrdersUseCase>(),
+    ),
   );
   gh.factory<_i208.GetLabelOptionsUseCase>(
     () => _i208.GetLabelOptionsUseCase(gh<_i196.MenuRepository>()),
@@ -355,8 +440,31 @@ _i174.GetIt $initGetIt(
       setCayeApiKey: gh<_i189.SetCayeApiKeyUseCase>(),
     ),
   );
-  gh.factory<_i807.KdsCubit>(
-    () => _i807.KdsCubit(
+  gh.factory<_i655.NudofControlCubit>(
+    () => _i655.NudofControlCubit(
+      observeOnline: gh<_i1055.ObserveNudofOnlineUseCase>(),
+      getOnlineSnapshot: gh<_i193.GetNudofOnlineSnapshotUseCase>(),
+      observePower: gh<_i993.ObserveNudofPowerUseCase>(),
+      setPower: gh<_i875.SetNudofPowerUseCase>(),
+    ),
+  );
+  gh.factory<_i132.ClearLiveOrdersSnapshotUseCase>(
+    () => _i132.ClearLiveOrdersSnapshotUseCase(
+      gh<_i604.LiveOrdersSnapshotRepository>(),
+    ),
+  );
+  gh.factory<_i657.LoadLiveOrdersSnapshotUseCase>(
+    () => _i657.LoadLiveOrdersSnapshotUseCase(
+      gh<_i604.LiveOrdersSnapshotRepository>(),
+    ),
+  );
+  gh.factory<_i28.SaveLiveOrdersSnapshotUseCase>(
+    () => _i28.SaveLiveOrdersSnapshotUseCase(
+      gh<_i604.LiveOrdersSnapshotRepository>(),
+    ),
+  );
+  gh.factory<_i112.FlowHubCubit>(
+    () => _i112.FlowHubCubit(
       completeCooking: gh<_i110.CompleteCookingUseCase>(),
       completePickup: gh<_i500.CompletePickupUseCase>(),
       connectOrderSocket: gh<_i6.ConnectOrderSocketUseCase>(),
@@ -376,6 +484,11 @@ _i174.GetIt $initGetIt(
       observeMachineConnection: gh<_i847.ObserveMachineConnectionUseCase>(),
       getMachineConnectionSnapshot:
           gh<_i849.GetMachineConnectionSnapshotUseCase>(),
+      observeNudofOnline: gh<_i1055.ObserveNudofOnlineUseCase>(),
+      getNudofOnlineSnapshot: gh<_i193.GetNudofOnlineSnapshotUseCase>(),
+      observeWledOnline: gh<_i486.ObserveWledOnlineUseCase>(),
+      getWledOnlineSnapshot: gh<_i35.GetWledOnlineSnapshotUseCase>(),
+      observeNudofPower: gh<_i993.ObserveNudofPowerUseCase>(),
       printLabel: gh<_i413.PrintLabelUseCase>(),
       printReceipt: gh<_i537.PrintReceiptUseCase>(),
       reconnectPrinter: gh<_i593.ReconnectPrinterUseCase>(),
@@ -397,6 +510,10 @@ _i174.GetIt $initGetIt(
       observeCalibrationStatus: gh<_i5.ObserveCalibrationStatusUseCase>(),
       disposeMachine: gh<_i135.DisposeMachineUseCase>(),
       disposePrinter: gh<_i517.DisposePrinterUseCase>(),
+      restartApp: gh<_i703.RestartAppUseCase>(),
+      saveLiveOrdersSnapshot: gh<_i28.SaveLiveOrdersSnapshotUseCase>(),
+      loadLiveOrdersSnapshot: gh<_i657.LoadLiveOrdersSnapshotUseCase>(),
+      clearLiveOrdersSnapshot: gh<_i132.ClearLiveOrdersSnapshotUseCase>(),
       observeLeaderUpdate: gh<_i606.ObserveLeaderUpdateUseCase>(),
       observeFollowerSyncRequest: gh<_i282.ObserveFollowerSyncRequestUseCase>(),
       publishLeaderUpdate: gh<_i563.PublishLeaderUpdateUseCase>(),
@@ -411,6 +528,7 @@ _i174.GetIt $initGetIt(
       sendCleaningCommand: gh<_i682.SendCleaningCommandUseCase>(),
       sendTimeSync: gh<_i627.SendTimeSyncUseCase>(),
       setCayeApiKey: gh<_i189.SetCayeApiKeyUseCase>(),
+      publishWledApi: gh<_i761.PublishWledApiUseCase>(),
     ),
   );
   return getIt;
