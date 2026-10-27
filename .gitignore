@@ -54,3 +54,6 @@ env.json
 # Runtime-generated diagnostic/audit logs (DiagLogger, MqttOrderAuditLogger)
 diag_log_*.txt
 mqtt_order_audit_*.jsonl
+
+# scripts/build_apk.sh's same-day build counter (local to this machine)
+.build_number.local

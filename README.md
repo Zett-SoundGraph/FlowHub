@@ -213,19 +213,19 @@ export 'complete_pickup_usecase.dart';
 ### 6.7 Version Naming Rule
 
 - Keep the `pubspec.yaml` version in this format:
-  - `version: MAJOR.MINOR.DATE+BUILD`
+  - `version: MAJOR.MINOR.YYMMDD+YYMMDDBUILD`
 - Current team convention:
   - `MAJOR`: breaking release line (for example `0`, `1`)
   - `MINOR`: feature milestone line (for example `1`, `2`)
-  - `DATE`: release date in `MMDD` (for example `0622`)
-  - `BUILD`: incremental build number for the same date/release line (for example `01`, `02`)
+  - `YYMMDD`: release date (for example `261027` for 2026-10-27) — appears in the version name, and repeated at the start of the build number
+  - `BUILD`: same-day build count (`01`, `02`, ...), appended after `YYMMDD` in the build number
 
 Valid examples:
 
 ```yaml
-version: 0.1.0622+01
-version: 0.1.0622+02
-version: 0.2.0701+01
+version: 0.10.261027+26102701
+version: 0.10.261027+26102702
+version: 0.10.261028+26102801
 ```
 
 Rules:
@@ -237,10 +237,14 @@ Rules:
 
 APK script note:
 
-- `scripts/build_apk.sh` converts `version` into `<build-name>.<build-number>` for exported file names.
-- Example:
-  - `version: 0.1.0622+01`
-  - output file: `FlowHub_KDS_0.1.0622.01-dev.apk`
+- `scripts/build_apk.sh` auto-computes today's `YYMMDD` + same-day build
+  count and passes them to `flutter build apk` as `--build-name`/
+  `--build-number` — `pubspec.yaml`'s own `version:` line only supplies
+  `MAJOR.MINOR` and otherwise stays untouched (only bump it by hand for a
+  genuine `MAJOR`/`MINOR` change). Pass `--version <value>` to the script to
+  override auto-versioning for a one-off build.
+- Example: `./scripts/build_apk.sh dev` on 2026-10-27's 1st build of the day
+  → `CafeBeta_FlowHub_dev_0.10.261027.26102701.apk`
 
 ## 7. KDS Usage Flow
 
@@ -308,18 +312,19 @@ Current script notes:
 - `gen_all.sh` requires `fluttergen` to be installed and available in PATH.
 - If `fluttergen` is not installed, use `gen_code.sh` or run `flutter pub run build_runner build` directly.
 
-Build APK via script:
+Build APK via script (auto-versions by date + same-day build count — see
+section 6.7):
 
 ```bash
 ./scripts/build_apk.sh dev
 ./scripts/build_apk.sh prod --mode release
-./scripts/build_apk.sh dev --mode debug --output ~/Documents/FlowHub_KDS
+./scripts/build_apk.sh dev --mode debug --output ~/Documents/CafeBeta_FlowHub
 ```
 
 Output format:
 
 ```text
-FlowHub_KDS_<version>-<flavor>.apk
+CafeBeta_FlowHub_<flavor>_<version>.apk
 ```
 
 If a script fails with command not found:
