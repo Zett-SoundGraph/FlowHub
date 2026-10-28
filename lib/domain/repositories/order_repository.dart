@@ -1,4 +1,5 @@
 import 'package:flowhub/domain/entities/index.dart';
+import 'package:flowhub/domain/enums/index.dart';
 
 typedef FleetHeartbeatEvent = ({
   String deviceId,
@@ -26,7 +27,21 @@ abstract class OrderRepository {
 
   Future<void> connect();
   void disconnect();
-  void sendStartCalibration(double height);
+  void sendStartCalibration(
+    double height, {
+    required String displayModel,
+    required double edgeMarginMm,
+    double? displayWidthMm,
+    double? displayHeightMm,
+  });
+  /// Leader-only: see IMqttDataSource.publishPickupTableTheme's doc comment.
+  Future<void> sendPickupTableTheme(PickupTableThemeSelection selection);
+  /// Leader-only: see IMqttDataSource.publishPickupTableThemeReset's doc comment.
+  Future<void> resetPickupTableTheme();
+  /// Leader-only: see IMqttDataSource.publishCreateTestOrders's doc comment.
+  Future<void> createPickupTableTestOrders();
+  /// Leader-only: see IMqttDataSource.publishClearTestOrders's doc comment.
+  Future<void> clearPickupTableTestOrders();
   Future<void> publishLeaderUpdate(LeaderUpdateMessage message);
   Future<void> publishFollowerSync(FollowerSyncRequest request);
   /// Leader-only: broadcasts the lightweight order summary display boards
@@ -46,10 +61,12 @@ abstract class OrderRepository {
   /// Leader-only: broadcasts a Caye 0x03 Cleaning Event Report on its own
   /// non-retained topic.
   Future<void> publishCayeCleaning(CayeEventMessage message);
-  /// TEMPORARY — see IMqttDataSource.publishWledPower's doc comment.
-  Future<void> publishWledPower(bool on);
-  /// TEMPORARY — see IMqttDataSource.publishWledApi's doc comment.
-  Future<void> publishWledApi(Map<String, dynamic> body);
+  /// See IMqttDataSource.publishWledApi's doc comment.
+  Future<void> publishWledApi(WledDevice device, Map<String, dynamic> body);
+  /// See IMqttDataSource.wledOnlineStream's doc comment.
+  Stream<({WledDevice device, bool online})> get wledOnlineStream;
+  /// See IMqttDataSource.wledOnlineByDevice's doc comment.
+  Map<WledDevice, bool> get wledOnlineByDevice;
 
   Future<bool> completeCooking(Order order, SubItem subItem);
   Future<bool> completePickup(Order order);

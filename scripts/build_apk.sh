@@ -10,11 +10,19 @@ Usage:
 Examples:
   ./scripts/build_apk.sh dev
   ./scripts/build_apk.sh prod --mode release
-  ./scripts/build_apk.sh dev --version 0.12.0225.01
-  ./scripts/build_apk.sh prod --output ~/Documents/FlowHub_KDS
+  ./scripts/build_apk.sh dev --version 0.10.261027.26102701
+  ./scripts/build_apk.sh prod --output ~/Documents/CafeBeta_FlowHub
 
 Output filename format:
-  FlowHub_KDS_<version>-<flavor>.apk
+  CafeBeta_FlowHub_<flavor>_<version>.apk
+
+Versioning (no --version given):
+  build-name is MAJOR.MINOR (read from pubspec.yaml) + today's date
+  (YYMMDD), build-number is YYMMDD followed by the same-day build count
+  (NN, starting at 01) — both auto-computed, no manual editing of
+  pubspec.yaml needed for a normal build. The same-day count is tracked in
+  .build_number.local (gitignored, local to this machine) so repeated
+  builds on the same day keep incrementing instead of colliding.
 EOF
 }
 
@@ -28,7 +36,7 @@ shift
 
 MODE="release"
 VERSION_OVERRIDE=""
-OUTPUT_DIR="${HOME}/Documents/FlowHub_KDS"
+OUTPUT_DIR="${HOME}/Documents/CafeBeta_FlowHub"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -77,32 +85,48 @@ case "$MODE" in
     ;;
 esac
 
+if [[ ! -f pubspec.yaml ]]; then
+  echo "pubspec.yaml not found. Run script at project root."
+  exit 1
+fi
+
+BUILD_NAME=""
+BUILD_NUMBER=""
+
 if [[ -n "$VERSION_OVERRIDE" ]]; then
   APP_VERSION="$VERSION_OVERRIDE"
 else
-  if [[ ! -f pubspec.yaml ]]; then
-    echo "pubspec.yaml not found. Run script at project root."
-    exit 1
-  fi
-
+  # Keep MAJOR.MINOR from pubspec.yaml's own version line (e.g. "0.10" out
+  # of "0.10.261027+26102701") — only the date/build-count part is
+  # auto-computed here, so bumping MAJOR/MINOR is still a deliberate,
+  # by-hand pubspec.yaml edit.
   VERSION_LINE="$(grep -E '^version:' pubspec.yaml | head -n1 | awk '{print $2}')"
   if [[ -z "$VERSION_LINE" ]]; then
     echo "Cannot read version from pubspec.yaml"
     exit 1
   fi
+  MAJOR_MINOR="$(echo "${VERSION_LINE%%+*}" | cut -d'.' -f1-2)"
 
-  BUILD_NAME="${VERSION_LINE%%+*}"
-  if [[ "$VERSION_LINE" == *"+"* ]]; then
-    BUILD_NUMBER_RAW="${VERSION_LINE##*+}"
-    if [[ "$BUILD_NUMBER_RAW" =~ ^[0-9]+$ ]]; then
-      BUILD_NUMBER="$(printf "%02d" "$BUILD_NUMBER_RAW")"
-    else
-      BUILD_NUMBER="$BUILD_NUMBER_RAW"
-    fi
-    APP_VERSION="${BUILD_NAME}.${BUILD_NUMBER}"
-  else
-    APP_VERSION="$BUILD_NAME"
+  TODAY="$(date +%y%m%d)"
+  COUNTER_FILE=".build_number.local"
+  LAST_DATE=""
+  LAST_COUNT=0
+  if [[ -f "$COUNTER_FILE" ]]; then
+    IFS=':' read -r LAST_DATE LAST_COUNT < "$COUNTER_FILE" || true
   fi
+  if [[ "$LAST_DATE" == "$TODAY" ]]; then
+    BUILD_COUNT=$((LAST_COUNT + 1))
+  else
+    BUILD_COUNT=1
+  fi
+  printf '%s:%d' "$TODAY" "$BUILD_COUNT" > "$COUNTER_FILE"
+
+  BUILD_NN="$(printf "%02d" "$BUILD_COUNT")"
+  BUILD_NAME="${MAJOR_MINOR}.${TODAY}"
+  BUILD_NUMBER="${TODAY}${BUILD_NN}"
+  APP_VERSION="${BUILD_NAME}.${BUILD_NUMBER}"
+
+  echo "Auto version: build-name=$BUILD_NAME build-number=$BUILD_NUMBER (build #$BUILD_COUNT today)"
 fi
 
 if [[ -d ".fvm" ]] && command -v fvm >/dev/null 2>&1; then
@@ -112,7 +136,12 @@ else
 fi
 
 echo "Building flavor=$FLAVOR mode=$MODE target=$TARGET"
-"${FLUTTER_CMD[@]}" build apk -t "$TARGET" --flavor "$FLAVOR" "--$MODE"
+if [[ -n "$BUILD_NAME" && -n "$BUILD_NUMBER" ]]; then
+  "${FLUTTER_CMD[@]}" build apk -t "$TARGET" --flavor "$FLAVOR" "--$MODE" \
+    --build-name="$BUILD_NAME" --build-number="$BUILD_NUMBER"
+else
+  "${FLUTTER_CMD[@]}" build apk -t "$TARGET" --flavor "$FLAVOR" "--$MODE"
+fi
 
 SOURCE_APK="build/app/outputs/flutter-apk/app-${FLAVOR}-${MODE}.apk"
 if [[ ! -f "$SOURCE_APK" ]]; then
@@ -125,7 +154,7 @@ if [[ -z "$SOURCE_APK" || ! -f "$SOURCE_APK" ]]; then
 fi
 
 mkdir -p "$OUTPUT_DIR"
-OUTPUT_FILE="${OUTPUT_DIR}/FlowHub_KDS_${APP_VERSION}-${FLAVOR}.apk"
+OUTPUT_FILE="${OUTPUT_DIR}/CafeBeta_FlowHub_${FLAVOR}_${APP_VERSION}.apk"
 cp -f "$SOURCE_APK" "$OUTPUT_FILE"
 
 echo "APK exported: $OUTPUT_FILE"

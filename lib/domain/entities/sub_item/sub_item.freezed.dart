@@ -33,7 +33,12 @@ mixin _$SubItem {
 // final 1.0) snaps the value exactly. Null phaseStartedAt means no
 // phase is currently active (e.g. still Pending, or already finalized).
  DateTime? get phaseStartedAt; double get phaseStartProgress; double get phaseTargetProgress; int get phaseDurationSeconds;// Bottom-bar-message-worthy production event — see ProductionStage.
- ProductionStage get stage;
+ ProductionStage get stage;// WLED guidance-light color for this one drink (e.g. "#FF0000") — assigned
+// once, in order, from a fixed 16-color rotation when the order's items
+// are first created from a real kiosk order (see FlowHubCubit's kiosk-order
+// handling), so two drinks in the SAME order never collide. Null for
+// orders that never went through that path (e.g. synthetic test orders).
+ String? get ledColorHex;
 /// Create a copy of SubItem
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -46,16 +51,16 @@ $SubItemCopyWith<SubItem> get copyWith => _$SubItemCopyWithImpl<SubItem>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SubItem&&(identical(other.menuName, menuName) || other.menuName == menuName)&&(identical(other.status, status) || other.status == status)&&(identical(other.progress, progress) || other.progress == progress)&&const DeepCollectionEquality().equals(other.logs, logs)&&(identical(other.isExtracting, isExtracting) || other.isExtracting == isExtracting)&&(identical(other.isError, isError) || other.isError == isError)&&(identical(other.errorCode, errorCode) || other.errorCode == errorCode)&&(identical(other.currentStage, currentStage) || other.currentStage == currentStage)&&(identical(other.skuNo, skuNo) || other.skuNo == skuNo)&&(identical(other.temp, temp) || other.temp == temp)&&(identical(other.size, size) || other.size == size)&&const DeepCollectionEquality().equals(other.selectedOptions, selectedOptions)&&(identical(other.phaseStartedAt, phaseStartedAt) || other.phaseStartedAt == phaseStartedAt)&&(identical(other.phaseStartProgress, phaseStartProgress) || other.phaseStartProgress == phaseStartProgress)&&(identical(other.phaseTargetProgress, phaseTargetProgress) || other.phaseTargetProgress == phaseTargetProgress)&&(identical(other.phaseDurationSeconds, phaseDurationSeconds) || other.phaseDurationSeconds == phaseDurationSeconds)&&(identical(other.stage, stage) || other.stage == stage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SubItem&&(identical(other.menuName, menuName) || other.menuName == menuName)&&(identical(other.status, status) || other.status == status)&&(identical(other.progress, progress) || other.progress == progress)&&const DeepCollectionEquality().equals(other.logs, logs)&&(identical(other.isExtracting, isExtracting) || other.isExtracting == isExtracting)&&(identical(other.isError, isError) || other.isError == isError)&&(identical(other.errorCode, errorCode) || other.errorCode == errorCode)&&(identical(other.currentStage, currentStage) || other.currentStage == currentStage)&&(identical(other.skuNo, skuNo) || other.skuNo == skuNo)&&(identical(other.temp, temp) || other.temp == temp)&&(identical(other.size, size) || other.size == size)&&const DeepCollectionEquality().equals(other.selectedOptions, selectedOptions)&&(identical(other.phaseStartedAt, phaseStartedAt) || other.phaseStartedAt == phaseStartedAt)&&(identical(other.phaseStartProgress, phaseStartProgress) || other.phaseStartProgress == phaseStartProgress)&&(identical(other.phaseTargetProgress, phaseTargetProgress) || other.phaseTargetProgress == phaseTargetProgress)&&(identical(other.phaseDurationSeconds, phaseDurationSeconds) || other.phaseDurationSeconds == phaseDurationSeconds)&&(identical(other.stage, stage) || other.stage == stage)&&(identical(other.ledColorHex, ledColorHex) || other.ledColorHex == ledColorHex));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,menuName,status,progress,const DeepCollectionEquality().hash(logs),isExtracting,isError,errorCode,currentStage,skuNo,temp,size,const DeepCollectionEquality().hash(selectedOptions),phaseStartedAt,phaseStartProgress,phaseTargetProgress,phaseDurationSeconds,stage);
+int get hashCode => Object.hash(runtimeType,menuName,status,progress,const DeepCollectionEquality().hash(logs),isExtracting,isError,errorCode,currentStage,skuNo,temp,size,const DeepCollectionEquality().hash(selectedOptions),phaseStartedAt,phaseStartProgress,phaseTargetProgress,phaseDurationSeconds,stage,ledColorHex);
 
 @override
 String toString() {
-  return 'SubItem(menuName: $menuName, status: $status, progress: $progress, logs: $logs, isExtracting: $isExtracting, isError: $isError, errorCode: $errorCode, currentStage: $currentStage, skuNo: $skuNo, temp: $temp, size: $size, selectedOptions: $selectedOptions, phaseStartedAt: $phaseStartedAt, phaseStartProgress: $phaseStartProgress, phaseTargetProgress: $phaseTargetProgress, phaseDurationSeconds: $phaseDurationSeconds, stage: $stage)';
+  return 'SubItem(menuName: $menuName, status: $status, progress: $progress, logs: $logs, isExtracting: $isExtracting, isError: $isError, errorCode: $errorCode, currentStage: $currentStage, skuNo: $skuNo, temp: $temp, size: $size, selectedOptions: $selectedOptions, phaseStartedAt: $phaseStartedAt, phaseStartProgress: $phaseStartProgress, phaseTargetProgress: $phaseTargetProgress, phaseDurationSeconds: $phaseDurationSeconds, stage: $stage, ledColorHex: $ledColorHex)';
 }
 
 
@@ -66,7 +71,7 @@ abstract mixin class $SubItemCopyWith<$Res>  {
   factory $SubItemCopyWith(SubItem value, $Res Function(SubItem) _then) = _$SubItemCopyWithImpl;
 @useResult
 $Res call({
- String menuName, OrderStatus status, double progress, List<String> logs, bool isExtracting, bool isError, String? errorCode, String currentStage, String skuNo, String temp, String size, List<SelectedOption> selectedOptions, DateTime? phaseStartedAt, double phaseStartProgress, double phaseTargetProgress, int phaseDurationSeconds, ProductionStage stage
+ String menuName, OrderStatus status, double progress, List<String> logs, bool isExtracting, bool isError, String? errorCode, String currentStage, String skuNo, String temp, String size, List<SelectedOption> selectedOptions, DateTime? phaseStartedAt, double phaseStartProgress, double phaseTargetProgress, int phaseDurationSeconds, ProductionStage stage, String? ledColorHex
 });
 
 
@@ -83,7 +88,7 @@ class _$SubItemCopyWithImpl<$Res>
 
 /// Create a copy of SubItem
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? menuName = null,Object? status = null,Object? progress = null,Object? logs = null,Object? isExtracting = null,Object? isError = null,Object? errorCode = freezed,Object? currentStage = null,Object? skuNo = null,Object? temp = null,Object? size = null,Object? selectedOptions = null,Object? phaseStartedAt = freezed,Object? phaseStartProgress = null,Object? phaseTargetProgress = null,Object? phaseDurationSeconds = null,Object? stage = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? menuName = null,Object? status = null,Object? progress = null,Object? logs = null,Object? isExtracting = null,Object? isError = null,Object? errorCode = freezed,Object? currentStage = null,Object? skuNo = null,Object? temp = null,Object? size = null,Object? selectedOptions = null,Object? phaseStartedAt = freezed,Object? phaseStartProgress = null,Object? phaseTargetProgress = null,Object? phaseDurationSeconds = null,Object? stage = null,Object? ledColorHex = freezed,}) {
   return _then(_self.copyWith(
 menuName: null == menuName ? _self.menuName : menuName // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
@@ -102,7 +107,8 @@ as DateTime?,phaseStartProgress: null == phaseStartProgress ? _self.phaseStartPr
 as double,phaseTargetProgress: null == phaseTargetProgress ? _self.phaseTargetProgress : phaseTargetProgress // ignore: cast_nullable_to_non_nullable
 as double,phaseDurationSeconds: null == phaseDurationSeconds ? _self.phaseDurationSeconds : phaseDurationSeconds // ignore: cast_nullable_to_non_nullable
 as int,stage: null == stage ? _self.stage : stage // ignore: cast_nullable_to_non_nullable
-as ProductionStage,
+as ProductionStage,ledColorHex: freezed == ledColorHex ? _self.ledColorHex : ledColorHex // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -187,10 +193,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String menuName,  OrderStatus status,  double progress,  List<String> logs,  bool isExtracting,  bool isError,  String? errorCode,  String currentStage,  String skuNo,  String temp,  String size,  List<SelectedOption> selectedOptions,  DateTime? phaseStartedAt,  double phaseStartProgress,  double phaseTargetProgress,  int phaseDurationSeconds,  ProductionStage stage)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String menuName,  OrderStatus status,  double progress,  List<String> logs,  bool isExtracting,  bool isError,  String? errorCode,  String currentStage,  String skuNo,  String temp,  String size,  List<SelectedOption> selectedOptions,  DateTime? phaseStartedAt,  double phaseStartProgress,  double phaseTargetProgress,  int phaseDurationSeconds,  ProductionStage stage,  String? ledColorHex)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SubItem() when $default != null:
-return $default(_that.menuName,_that.status,_that.progress,_that.logs,_that.isExtracting,_that.isError,_that.errorCode,_that.currentStage,_that.skuNo,_that.temp,_that.size,_that.selectedOptions,_that.phaseStartedAt,_that.phaseStartProgress,_that.phaseTargetProgress,_that.phaseDurationSeconds,_that.stage);case _:
+return $default(_that.menuName,_that.status,_that.progress,_that.logs,_that.isExtracting,_that.isError,_that.errorCode,_that.currentStage,_that.skuNo,_that.temp,_that.size,_that.selectedOptions,_that.phaseStartedAt,_that.phaseStartProgress,_that.phaseTargetProgress,_that.phaseDurationSeconds,_that.stage,_that.ledColorHex);case _:
   return orElse();
 
 }
@@ -208,10 +214,10 @@ return $default(_that.menuName,_that.status,_that.progress,_that.logs,_that.isEx
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String menuName,  OrderStatus status,  double progress,  List<String> logs,  bool isExtracting,  bool isError,  String? errorCode,  String currentStage,  String skuNo,  String temp,  String size,  List<SelectedOption> selectedOptions,  DateTime? phaseStartedAt,  double phaseStartProgress,  double phaseTargetProgress,  int phaseDurationSeconds,  ProductionStage stage)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String menuName,  OrderStatus status,  double progress,  List<String> logs,  bool isExtracting,  bool isError,  String? errorCode,  String currentStage,  String skuNo,  String temp,  String size,  List<SelectedOption> selectedOptions,  DateTime? phaseStartedAt,  double phaseStartProgress,  double phaseTargetProgress,  int phaseDurationSeconds,  ProductionStage stage,  String? ledColorHex)  $default,) {final _that = this;
 switch (_that) {
 case _SubItem():
-return $default(_that.menuName,_that.status,_that.progress,_that.logs,_that.isExtracting,_that.isError,_that.errorCode,_that.currentStage,_that.skuNo,_that.temp,_that.size,_that.selectedOptions,_that.phaseStartedAt,_that.phaseStartProgress,_that.phaseTargetProgress,_that.phaseDurationSeconds,_that.stage);case _:
+return $default(_that.menuName,_that.status,_that.progress,_that.logs,_that.isExtracting,_that.isError,_that.errorCode,_that.currentStage,_that.skuNo,_that.temp,_that.size,_that.selectedOptions,_that.phaseStartedAt,_that.phaseStartProgress,_that.phaseTargetProgress,_that.phaseDurationSeconds,_that.stage,_that.ledColorHex);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -228,10 +234,10 @@ return $default(_that.menuName,_that.status,_that.progress,_that.logs,_that.isEx
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String menuName,  OrderStatus status,  double progress,  List<String> logs,  bool isExtracting,  bool isError,  String? errorCode,  String currentStage,  String skuNo,  String temp,  String size,  List<SelectedOption> selectedOptions,  DateTime? phaseStartedAt,  double phaseStartProgress,  double phaseTargetProgress,  int phaseDurationSeconds,  ProductionStage stage)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String menuName,  OrderStatus status,  double progress,  List<String> logs,  bool isExtracting,  bool isError,  String? errorCode,  String currentStage,  String skuNo,  String temp,  String size,  List<SelectedOption> selectedOptions,  DateTime? phaseStartedAt,  double phaseStartProgress,  double phaseTargetProgress,  int phaseDurationSeconds,  ProductionStage stage,  String? ledColorHex)?  $default,) {final _that = this;
 switch (_that) {
 case _SubItem() when $default != null:
-return $default(_that.menuName,_that.status,_that.progress,_that.logs,_that.isExtracting,_that.isError,_that.errorCode,_that.currentStage,_that.skuNo,_that.temp,_that.size,_that.selectedOptions,_that.phaseStartedAt,_that.phaseStartProgress,_that.phaseTargetProgress,_that.phaseDurationSeconds,_that.stage);case _:
+return $default(_that.menuName,_that.status,_that.progress,_that.logs,_that.isExtracting,_that.isError,_that.errorCode,_that.currentStage,_that.skuNo,_that.temp,_that.size,_that.selectedOptions,_that.phaseStartedAt,_that.phaseStartProgress,_that.phaseTargetProgress,_that.phaseDurationSeconds,_that.stage,_that.ledColorHex);case _:
   return null;
 
 }
@@ -243,7 +249,7 @@ return $default(_that.menuName,_that.status,_that.progress,_that.logs,_that.isEx
 @JsonSerializable()
 
 class _SubItem extends SubItem {
-  const _SubItem({this.menuName = '', this.status = OrderStatus.pending, this.progress = 0.0, final  List<String> logs = const [], this.isExtracting = false, this.isError = false, this.errorCode, this.currentStage = 'Pending', this.skuNo = '', this.temp = '', this.size = '', final  List<SelectedOption> selectedOptions = const [], this.phaseStartedAt, this.phaseStartProgress = 0.0, this.phaseTargetProgress = 0.0, this.phaseDurationSeconds = 0, this.stage = ProductionStage.none}): _logs = logs,_selectedOptions = selectedOptions,super._();
+  const _SubItem({this.menuName = '', this.status = OrderStatus.pending, this.progress = 0.0, final  List<String> logs = const [], this.isExtracting = false, this.isError = false, this.errorCode, this.currentStage = 'Pending', this.skuNo = '', this.temp = '', this.size = '', final  List<SelectedOption> selectedOptions = const [], this.phaseStartedAt, this.phaseStartProgress = 0.0, this.phaseTargetProgress = 0.0, this.phaseDurationSeconds = 0, this.stage = ProductionStage.none, this.ledColorHex}): _logs = logs,_selectedOptions = selectedOptions,super._();
   factory _SubItem.fromJson(Map<String, dynamic> json) => _$SubItemFromJson(json);
 
 @override@JsonKey() final  String menuName;
@@ -293,6 +299,12 @@ class _SubItem extends SubItem {
 @override@JsonKey() final  int phaseDurationSeconds;
 // Bottom-bar-message-worthy production event — see ProductionStage.
 @override@JsonKey() final  ProductionStage stage;
+// WLED guidance-light color for this one drink (e.g. "#FF0000") — assigned
+// once, in order, from a fixed 16-color rotation when the order's items
+// are first created from a real kiosk order (see FlowHubCubit's kiosk-order
+// handling), so two drinks in the SAME order never collide. Null for
+// orders that never went through that path (e.g. synthetic test orders).
+@override final  String? ledColorHex;
 
 /// Create a copy of SubItem
 /// with the given fields replaced by the non-null parameter values.
@@ -307,16 +319,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SubItem&&(identical(other.menuName, menuName) || other.menuName == menuName)&&(identical(other.status, status) || other.status == status)&&(identical(other.progress, progress) || other.progress == progress)&&const DeepCollectionEquality().equals(other._logs, _logs)&&(identical(other.isExtracting, isExtracting) || other.isExtracting == isExtracting)&&(identical(other.isError, isError) || other.isError == isError)&&(identical(other.errorCode, errorCode) || other.errorCode == errorCode)&&(identical(other.currentStage, currentStage) || other.currentStage == currentStage)&&(identical(other.skuNo, skuNo) || other.skuNo == skuNo)&&(identical(other.temp, temp) || other.temp == temp)&&(identical(other.size, size) || other.size == size)&&const DeepCollectionEquality().equals(other._selectedOptions, _selectedOptions)&&(identical(other.phaseStartedAt, phaseStartedAt) || other.phaseStartedAt == phaseStartedAt)&&(identical(other.phaseStartProgress, phaseStartProgress) || other.phaseStartProgress == phaseStartProgress)&&(identical(other.phaseTargetProgress, phaseTargetProgress) || other.phaseTargetProgress == phaseTargetProgress)&&(identical(other.phaseDurationSeconds, phaseDurationSeconds) || other.phaseDurationSeconds == phaseDurationSeconds)&&(identical(other.stage, stage) || other.stage == stage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SubItem&&(identical(other.menuName, menuName) || other.menuName == menuName)&&(identical(other.status, status) || other.status == status)&&(identical(other.progress, progress) || other.progress == progress)&&const DeepCollectionEquality().equals(other._logs, _logs)&&(identical(other.isExtracting, isExtracting) || other.isExtracting == isExtracting)&&(identical(other.isError, isError) || other.isError == isError)&&(identical(other.errorCode, errorCode) || other.errorCode == errorCode)&&(identical(other.currentStage, currentStage) || other.currentStage == currentStage)&&(identical(other.skuNo, skuNo) || other.skuNo == skuNo)&&(identical(other.temp, temp) || other.temp == temp)&&(identical(other.size, size) || other.size == size)&&const DeepCollectionEquality().equals(other._selectedOptions, _selectedOptions)&&(identical(other.phaseStartedAt, phaseStartedAt) || other.phaseStartedAt == phaseStartedAt)&&(identical(other.phaseStartProgress, phaseStartProgress) || other.phaseStartProgress == phaseStartProgress)&&(identical(other.phaseTargetProgress, phaseTargetProgress) || other.phaseTargetProgress == phaseTargetProgress)&&(identical(other.phaseDurationSeconds, phaseDurationSeconds) || other.phaseDurationSeconds == phaseDurationSeconds)&&(identical(other.stage, stage) || other.stage == stage)&&(identical(other.ledColorHex, ledColorHex) || other.ledColorHex == ledColorHex));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,menuName,status,progress,const DeepCollectionEquality().hash(_logs),isExtracting,isError,errorCode,currentStage,skuNo,temp,size,const DeepCollectionEquality().hash(_selectedOptions),phaseStartedAt,phaseStartProgress,phaseTargetProgress,phaseDurationSeconds,stage);
+int get hashCode => Object.hash(runtimeType,menuName,status,progress,const DeepCollectionEquality().hash(_logs),isExtracting,isError,errorCode,currentStage,skuNo,temp,size,const DeepCollectionEquality().hash(_selectedOptions),phaseStartedAt,phaseStartProgress,phaseTargetProgress,phaseDurationSeconds,stage,ledColorHex);
 
 @override
 String toString() {
-  return 'SubItem(menuName: $menuName, status: $status, progress: $progress, logs: $logs, isExtracting: $isExtracting, isError: $isError, errorCode: $errorCode, currentStage: $currentStage, skuNo: $skuNo, temp: $temp, size: $size, selectedOptions: $selectedOptions, phaseStartedAt: $phaseStartedAt, phaseStartProgress: $phaseStartProgress, phaseTargetProgress: $phaseTargetProgress, phaseDurationSeconds: $phaseDurationSeconds, stage: $stage)';
+  return 'SubItem(menuName: $menuName, status: $status, progress: $progress, logs: $logs, isExtracting: $isExtracting, isError: $isError, errorCode: $errorCode, currentStage: $currentStage, skuNo: $skuNo, temp: $temp, size: $size, selectedOptions: $selectedOptions, phaseStartedAt: $phaseStartedAt, phaseStartProgress: $phaseStartProgress, phaseTargetProgress: $phaseTargetProgress, phaseDurationSeconds: $phaseDurationSeconds, stage: $stage, ledColorHex: $ledColorHex)';
 }
 
 
@@ -327,7 +339,7 @@ abstract mixin class _$SubItemCopyWith<$Res> implements $SubItemCopyWith<$Res> {
   factory _$SubItemCopyWith(_SubItem value, $Res Function(_SubItem) _then) = __$SubItemCopyWithImpl;
 @override @useResult
 $Res call({
- String menuName, OrderStatus status, double progress, List<String> logs, bool isExtracting, bool isError, String? errorCode, String currentStage, String skuNo, String temp, String size, List<SelectedOption> selectedOptions, DateTime? phaseStartedAt, double phaseStartProgress, double phaseTargetProgress, int phaseDurationSeconds, ProductionStage stage
+ String menuName, OrderStatus status, double progress, List<String> logs, bool isExtracting, bool isError, String? errorCode, String currentStage, String skuNo, String temp, String size, List<SelectedOption> selectedOptions, DateTime? phaseStartedAt, double phaseStartProgress, double phaseTargetProgress, int phaseDurationSeconds, ProductionStage stage, String? ledColorHex
 });
 
 
@@ -344,7 +356,7 @@ class __$SubItemCopyWithImpl<$Res>
 
 /// Create a copy of SubItem
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? menuName = null,Object? status = null,Object? progress = null,Object? logs = null,Object? isExtracting = null,Object? isError = null,Object? errorCode = freezed,Object? currentStage = null,Object? skuNo = null,Object? temp = null,Object? size = null,Object? selectedOptions = null,Object? phaseStartedAt = freezed,Object? phaseStartProgress = null,Object? phaseTargetProgress = null,Object? phaseDurationSeconds = null,Object? stage = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? menuName = null,Object? status = null,Object? progress = null,Object? logs = null,Object? isExtracting = null,Object? isError = null,Object? errorCode = freezed,Object? currentStage = null,Object? skuNo = null,Object? temp = null,Object? size = null,Object? selectedOptions = null,Object? phaseStartedAt = freezed,Object? phaseStartProgress = null,Object? phaseTargetProgress = null,Object? phaseDurationSeconds = null,Object? stage = null,Object? ledColorHex = freezed,}) {
   return _then(_SubItem(
 menuName: null == menuName ? _self.menuName : menuName // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
@@ -363,7 +375,8 @@ as DateTime?,phaseStartProgress: null == phaseStartProgress ? _self.phaseStartPr
 as double,phaseTargetProgress: null == phaseTargetProgress ? _self.phaseTargetProgress : phaseTargetProgress // ignore: cast_nullable_to_non_nullable
 as double,phaseDurationSeconds: null == phaseDurationSeconds ? _self.phaseDurationSeconds : phaseDurationSeconds // ignore: cast_nullable_to_non_nullable
 as int,stage: null == stage ? _self.stage : stage // ignore: cast_nullable_to_non_nullable
-as ProductionStage,
+as ProductionStage,ledColorHex: freezed == ledColorHex ? _self.ledColorHex : ledColorHex // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

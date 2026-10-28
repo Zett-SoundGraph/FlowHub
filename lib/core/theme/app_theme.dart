@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// Font family registered in pubspec.yaml — used for both the KDS
+/// Font family registered in pubspec.yaml — used for both the FlowHub
 /// main-screen UI (figmaImage/1_main-*.png) and printed order labels
 /// ([AppTextStyles], formerly JetBrainsMono).
-const kdsFontFamily = 'LineSeedJP';
+const flowhubFontFamily = 'LineSeedJP';
 
 /// App-level text styles for printed order labels.
 /// Use these constants in widgets directly (e.g. in screenshot capture contexts
@@ -20,7 +20,7 @@ class AppTextStyles {
 
   /// Left column's rotated order number + sequence (e.g. "M1027 . 02/02").
   static const TextStyle labelTitle = TextStyle(
-    fontFamily: kdsFontFamily,
+    fontFamily: flowhubFontFamily,
     fontWeight: FontWeight.w700,
     fontSize: 64.0,
     height: 1.0,
@@ -30,7 +30,7 @@ class AppTextStyles {
 
   /// "[PRODUCT]" / "[OPTION]" section headers.
   static const TextStyle labelSectionHeader = TextStyle(
-    fontFamily: kdsFontFamily,
+    fontFamily: flowhubFontFamily,
     fontWeight: FontWeight.w700,
     fontSize: 30.0,
     letterSpacing: 0.0,
@@ -39,7 +39,7 @@ class AppTextStyles {
 
   /// The menu name line (e.g. "Banana Milk Latte").
   static const TextStyle labelMenuName = TextStyle(
-    fontFamily: kdsFontFamily,
+    fontFamily: flowhubFontFamily,
     fontWeight: FontWeight.w700,
     fontSize: 26.0,
     letterSpacing: 0.26,
@@ -48,7 +48,7 @@ class AppTextStyles {
 
   /// Version line + option list items — identical spec.
   static const TextStyle labelProduct = TextStyle(
-    fontFamily: kdsFontFamily,
+    fontFamily: flowhubFontFamily,
     fontWeight: FontWeight.w400,
     fontSize: 24.0,
     letterSpacing: 0.24,
@@ -58,7 +58,7 @@ class AppTextStyles {
   /// ORDER TIME / BUILD BY footer lines — same spec as [labelProduct], kept
   /// as its own named style since it's a semantically distinct section.
   static const TextStyle labelFooter = TextStyle(
-    fontFamily: kdsFontFamily,
+    fontFamily: flowhubFontFamily,
     fontWeight: FontWeight.w400,
     fontSize: 22.0,
     letterSpacing: 0.22,
@@ -77,10 +77,10 @@ class AppTheme {
       );
 }
 
-/// Design tokens for the KDS main screen, lifted from the Figma export
+/// Design tokens for the FlowHub main screen, lifted from the Figma export
 /// (figmaImage/1_main-*.png, 1280x1752).
-class KdsColors {
-  const KdsColors._();
+class FlowHubColors {
+  const FlowHubColors._();
 
   static const pageBg = Color(0xFFE3ECF0);
   static const navy = Color(0xFF05334A);
@@ -104,12 +104,12 @@ class KdsColors {
   static const textPrimary87 = Color(0xDE1A1C1E);
 }
 
-/// The KDS Figma frames are 1280 logical px wide. Physical KDS tablets don't
+/// The FlowHub Figma frames are 1280 logical px wide. Physical FlowHub tablets don't
 /// all share that logical width/density, so every raw Figma value must be
-/// multiplied by [KdsScale.of] before use — that keeps proportions matching
+/// multiplied by [FlowHubScale.of] before use — that keeps proportions matching
 /// the design regardless of the actual device.
-class KdsScale {
-  const KdsScale._();
+class FlowHubScale {
+  const FlowHubScale._();
 
   static const figmaWidth = 1280.0;
 

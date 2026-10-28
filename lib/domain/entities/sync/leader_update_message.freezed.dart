@@ -15,14 +15,18 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LeaderUpdateMessage {
 
- String get updateType; String get boardName; String get eventId;// Monotonically increasing — a follower only applies this update if it's
+ String get updateType;// Generic receiver-group label, not a specific device — this is a
+// single retained broadcast every Follower (F01/F02/...) receives
+// identically, so no one Follower's own name can go here. Never read
+// by any receiver; purely a human-eyeballing label on a raw payload.
+ String get boardName; String get eventId;// Monotonically increasing — a follower only applies this update if it's
 // newer than the last one it already applied, guarding against
 // out-of-order delivery rolling the UI back to a stale state.
  int get version; List<Order> get orders; bool get isCalibrating; int get calibrationHeight; bool get isPrinterConnected; bool get isLabelAttached;// Raspberry Pi (ToF) and Caye machine connections only physically exist
 // on the leader (direct WebSocket-server / TCP-socket hardware links) —
 // mirrored here the same way isPrinterConnected already is, so a
 // follower's Device Management screen shows the leader's real state
-// instead of being permanently stuck at KdsState.initial()'s false.
+// instead of being permanently stuck at FlowHubState.initial()'s false.
  bool get isConnected; bool get isCayeConnected;
 /// Create a copy of LeaderUpdateMessage
 /// with the given fields replaced by the non-null parameter values.
@@ -227,10 +231,14 @@ return $default(_that.updateType,_that.boardName,_that.eventId,_that.version,_th
 @JsonSerializable()
 
 class _LeaderUpdateMessage implements LeaderUpdateMessage {
-  const _LeaderUpdateMessage({this.updateType = 'orders_snapshot', this.boardName = 'kds', this.eventId = '', this.version = 0, final  List<Order> orders = const [], this.isCalibrating = false, this.calibrationHeight = 920, this.isPrinterConnected = false, this.isLabelAttached = false, this.isConnected = false, this.isCayeConnected = false}): _orders = orders;
+  const _LeaderUpdateMessage({this.updateType = 'orders_snapshot', this.boardName = 'flowhubF', this.eventId = '', this.version = 0, final  List<Order> orders = const [], this.isCalibrating = false, this.calibrationHeight = 920, this.isPrinterConnected = false, this.isLabelAttached = false, this.isConnected = false, this.isCayeConnected = false}): _orders = orders;
   factory _LeaderUpdateMessage.fromJson(Map<String, dynamic> json) => _$LeaderUpdateMessageFromJson(json);
 
 @override@JsonKey() final  String updateType;
+// Generic receiver-group label, not a specific device — this is a
+// single retained broadcast every Follower (F01/F02/...) receives
+// identically, so no one Follower's own name can go here. Never read
+// by any receiver; purely a human-eyeballing label on a raw payload.
 @override@JsonKey() final  String boardName;
 @override@JsonKey() final  String eventId;
 // Monotonically increasing — a follower only applies this update if it's
@@ -252,7 +260,7 @@ class _LeaderUpdateMessage implements LeaderUpdateMessage {
 // on the leader (direct WebSocket-server / TCP-socket hardware links) —
 // mirrored here the same way isPrinterConnected already is, so a
 // follower's Device Management screen shows the leader's real state
-// instead of being permanently stuck at KdsState.initial()'s false.
+// instead of being permanently stuck at FlowHubState.initial()'s false.
 @override@JsonKey() final  bool isConnected;
 @override@JsonKey() final  bool isCayeConnected;
 

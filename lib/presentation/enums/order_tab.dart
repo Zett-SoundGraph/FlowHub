@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flowhub/domain/entities/index.dart';
 import 'package:flowhub/domain/enums/index.dart';
 
-/// The 4 status buckets shown as tabs on the KDS main screen.
+/// The 4 status buckets shown as tabs on the FlowHub main screen.
 enum OrderTab { newOrder, brew, call, done }
 
 /// Past this, an order's elapsed/countdown pill switches to the "delayed" style.

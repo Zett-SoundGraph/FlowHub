@@ -43,7 +43,6 @@ export 'publish_follower_sync_usecase.dart';
 export 'publish_kiosk_update_usecase.dart';
 export 'publish_leader_update_usecase.dart';
 export 'publish_wled_api_usecase.dart';
-export 'publish_wled_power_usecase.dart';
 export 'reconnect_printer_usecase.dart';
 export 'resolve_menu_options_usecase.dart';
 export 'send_cancel_command_usecase.dart';

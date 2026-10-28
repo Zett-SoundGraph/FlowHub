@@ -14,7 +14,7 @@ abstract class Order with _$Order {
     String? nickname,
     // From the kiosk order — carried through untouched so it can be
     // forwarded to display boards (e.g. Flow Board's status-bar copy) for
-    // localization, even though nothing in KDS itself renders it yet.
+    // localization, even though nothing in FlowHub itself renders it yet.
     @Default('') String language,
     @Default([]) List<SubItem> items,
     @Default(0) int drinkCount,

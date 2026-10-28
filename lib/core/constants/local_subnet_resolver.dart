@@ -36,7 +36,7 @@ class LocalSubnetResolver {
   /// first attempt against the wrong address; it only ever dials the real
   /// one. Caye's IP still reads [prefix] directly instead of awaiting this,
   /// since it's threaded through some genuinely synchronous call sites
-  /// (e.g. a `const`/plain-value local in KdsCubit) — it self-heals on its
+  /// (e.g. a `const`/plain-value local in FlowHubCubit) — it self-heals on its
   /// own next retry instead, same as before.
   static Future<String> get ready => _readyCompleter.future;
 

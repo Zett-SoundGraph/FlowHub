@@ -6,9 +6,9 @@ import 'package:flowhub/core/constants/network.dart';
 import 'package:flowhub/core/theme/app_theme.dart';
 import 'package:flowhub/presentation/cubit/caye/caye_management_cubit.dart';
 import 'package:flowhub/presentation/cubit/caye/caye_management_state.dart';
-import 'package:flowhub/presentation/cubit/kds/kds_cubit.dart';
-import 'package:flowhub/presentation/cubit/kds/kds_state.dart';
-import 'package:flowhub/presentation/widgets/kds_sub_screen_scaffold.dart';
+import 'package:flowhub/presentation/cubit/flowhub/flowhub_cubit.dart';
+import 'package:flowhub/presentation/cubit/flowhub/flowhub_state.dart';
+import 'package:flowhub/presentation/widgets/flowhub_sub_screen_scaffold.dart';
 
 /// figmaImage/11_Caye Machine Control.png + its -1/-2/-3/-4 confirm-dialog
 /// variants. Rinsing/Cleaning/Sync dispatch the same real MQTT commands the
@@ -34,12 +34,12 @@ class CayeManagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scale = KdsScale.of(context);
+    final scale = FlowHubScale.of(context);
     final cubit = context.read<CayeManagementCubit>();
-    final kdsCubit = context.read<KdsCubit>();
+    final flowhubCubit = context.read<FlowHubCubit>();
     final machineIp = NetworkConstants.cayeMachineIp;
 
-    return KdsSubScreenScaffold(
+    return FlowHubSubScreenScaffold(
       scale: scale,
       title: 'Caye Machine Control',
       headerIconAsset: 'assets/images/Caye.png',
@@ -100,7 +100,7 @@ class CayeManagementScreen extends StatelessWidget {
               onTap: () => _CayeConfirmDialog.show(
                 context: context,
                 scale: scale,
-                title: 'Sync Machine Time with KDS?',
+                title: 'Sync Machine Time with FlowHub?',
                 subtitle:
                     "This will synchronize the coffee machine's clock with the system time.",
                 actionLabel: 'Sync',
@@ -148,7 +148,7 @@ class CayeManagementScreen extends StatelessWidget {
                 subtitle:
                     'Brews 10 espresso shots back-to-back with no delay between them, to stress-test the machine.',
                 actionLabel: 'Start',
-                onConfirm: () => kdsCubit.startConsecutiveShotTest(),
+                onConfirm: () => flowhubCubit.startConsecutiveShotTest(),
               ),
             ),
             _ShotTestStatus(scale: scale),
@@ -241,7 +241,7 @@ class _ActionButton extends StatelessWidget {
         // shape/size until the real files are added.
         child: Row(
           children: [
-            _KdsAssetOrFallback(
+            _FlowHubAssetOrFallback(
               asset: iconAsset,
               fallback: iconFallback,
               width: iconWidth * scale,
@@ -252,7 +252,7 @@ class _ActionButton extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontFamily: kdsFontFamily,
+                fontFamily: flowhubFontFamily,
                 fontWeight: FontWeight.w400,
                 fontSize: 32 * scale,
                 height: 50 / 32,
@@ -267,14 +267,14 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-class _KdsAssetOrFallback extends StatelessWidget {
+class _FlowHubAssetOrFallback extends StatelessWidget {
   final String asset;
   final IconData fallback;
   final double width;
   final double height;
   final Color color;
 
-  const _KdsAssetOrFallback({
+  const _FlowHubAssetOrFallback({
     required this.asset,
     required this.fallback,
     required this.width,
@@ -342,7 +342,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
           Text(
             'Caye Machine API Key',
             style: TextStyle(
-              fontFamily: kdsFontFamily,
+              fontFamily: flowhubFontFamily,
               fontWeight: FontWeight.w700,
               fontSize: 28 * scale,
               color: const Color(0xFF1A1C1E),
@@ -352,7 +352,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
           Text(
             'Each physical machine uses a different key — update this when swapping to a different unit.',
             style: TextStyle(
-              fontFamily: kdsFontFamily,
+              fontFamily: flowhubFontFamily,
               fontSize: 22 * scale,
               color: const Color(0x941A1C1E),
             ),
@@ -368,7 +368,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
                     if (_justSaved) setState(() => _justSaved = false);
                   },
                   style: TextStyle(
-                    fontFamily: kdsFontFamily,
+                    fontFamily: flowhubFontFamily,
                     fontSize: 28 * scale,
                     color: const Color(0xFF1A1C1E),
                   ),
@@ -401,13 +401,13 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
                   padding: EdgeInsets.symmetric(horizontal: 32 * scale),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: KdsColors.navy,
+                    color: FlowHubColors.navy,
                     borderRadius: BorderRadius.circular(16 * scale),
                   ),
                   child: Text(
                     'Save',
                     style: TextStyle(
-                      fontFamily: kdsFontFamily,
+                      fontFamily: flowhubFontFamily,
                       fontWeight: FontWeight.w700,
                       fontSize: 28 * scale,
                       color: Colors.white,
@@ -422,7 +422,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
             Text(
               'Saved',
               style: TextStyle(
-                fontFamily: kdsFontFamily,
+                fontFamily: flowhubFontFamily,
                 fontSize: 22 * scale,
                 color: const Color(0xFF3895C4),
               ),
@@ -436,7 +436,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
 
 /// Confirmation popup shared by all 4 action buttons (figmaImage/
 /// 11_Caye Machine Control-1/-2/-3/-4.png) — same visual family as
-/// [KdsReprintLabelDialog], widened to 820. Height is intentionally NOT
+/// [FlowHubReprintLabelDialog], widened to 820. Height is intentionally NOT
 /// fixed to the spec's own 358 (that number came from measuring the
 /// Rinsing instance specifically, whose subtitle is one line) — the other
 /// three subtitles wrap to two lines, which this exact padding/gap math
@@ -487,7 +487,7 @@ class _CayeConfirmDialog extends StatelessWidget {
         width: 820 * scale,
         padding: EdgeInsets.fromLTRB(40 * scale, 32 * scale, 40 * scale, 40 * scale),
         decoration: BoxDecoration(
-          color: KdsColors.cardBg,
+          color: FlowHubColors.cardBg,
           borderRadius: BorderRadius.circular(40 * scale),
           boxShadow: [
             BoxShadow(color: const Color(0x1F1A1C1E), blurRadius: 104 * scale),
@@ -507,12 +507,12 @@ class _CayeConfirmDialog extends StatelessWidget {
               child: Text(
                 title,
                 style: TextStyle(
-                  fontFamily: kdsFontFamily,
+                  fontFamily: flowhubFontFamily,
                   fontWeight: FontWeight.w700,
                   fontSize: 36 * scale,
                   height: 50 / 36,
                   letterSpacing: -0.36 * scale,
-                  color: KdsColors.textPrimary87,
+                  color: FlowHubColors.textPrimary87,
                 ),
               ),
             ),
@@ -526,7 +526,7 @@ class _CayeConfirmDialog extends StatelessWidget {
               child: Text(
                 subtitle,
                 style: TextStyle(
-                  fontFamily: kdsFontFamily,
+                  fontFamily: flowhubFontFamily,
                   fontWeight: FontWeight.w400,
                   fontSize: 28 * scale,
                   height: 36 / 28,
@@ -552,7 +552,7 @@ class _CayeConfirmDialog extends StatelessWidget {
                   child: _DialogButton(
                     scale: scale,
                     label: actionLabel,
-                    bg: KdsColors.navy,
+                    bg: FlowHubColors.navy,
                     fg: Colors.white,
                     shadow: true,
                     onTap: () {
@@ -612,7 +612,7 @@ class _DialogButton extends StatelessWidget {
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontFamily: kdsFontFamily,
+            fontFamily: flowhubFontFamily,
             fontWeight: FontWeight.w700,
             fontSize: 32 * scale,
             height: 40 / 32,
@@ -626,12 +626,12 @@ class _DialogButton extends StatelessWidget {
 }
 
 /// Live elapsed-time + shot-count readout under the Shot Test button —
-/// ticks every second while a test is in progress (KdsState.shotTestTotal >
+/// ticks every second while a test is in progress (FlowHubState.shotTestTotal >
 /// 0 and not yet finished), then freezes at the final elapsed time once
-/// KdsState.shotTestFinishedAt is stamped. Hidden entirely before the first
+/// FlowHubState.shotTestFinishedAt is stamped. Hidden entirely before the first
 /// test this session (shotTestTotal == 0). See
-/// KdsCubit.startConsecutiveShotTest/_recordShotTestCompletion for where
-/// these KdsState fields are set.
+/// FlowHubCubit.startConsecutiveShotTest/_recordShotTestCompletion for where
+/// these FlowHubState fields are set.
 class _ShotTestStatus extends StatefulWidget {
   final double scale;
 
@@ -667,7 +667,7 @@ class _ShotTestStatusState extends State<_ShotTestStatus> {
   @override
   Widget build(BuildContext context) {
     final scale = widget.scale;
-    return BlocBuilder<KdsCubit, KdsState>(
+    return BlocBuilder<FlowHubCubit, FlowHubState>(
       builder: (context, state) {
         if (state.shotTestTotal == 0) return const SizedBox.shrink();
 
@@ -687,7 +687,7 @@ class _ShotTestStatusState extends State<_ShotTestStatus> {
               Icon(
                 isDone ? Icons.check_circle_outline : Icons.timer_outlined,
                 size: 24 * scale,
-                color: isDone ? Colors.green : KdsColors.navy,
+                color: isDone ? Colors.green : FlowHubColors.navy,
               ),
               SizedBox(width: 8 * scale),
               Text(
@@ -695,7 +695,7 @@ class _ShotTestStatusState extends State<_ShotTestStatus> {
                     ? 'Done — ${state.shotTestTotal}/${state.shotTestTotal} shots in ${_formatElapsed(elapsed)}'
                     : 'Shot $currentShot/${state.shotTestTotal} — ${_formatElapsed(elapsed)}',
                 style: TextStyle(
-                  fontFamily: kdsFontFamily,
+                  fontFamily: flowhubFontFamily,
                   fontWeight: FontWeight.w600,
                   fontSize: 24 * scale,
                   color: const Color(0xFF1A1C1E),
@@ -827,7 +827,7 @@ class _ExtractionHistoryRangeDialogState extends State<_ExtractionHistoryRangeDi
         width: 820 * scale,
         padding: EdgeInsets.fromLTRB(40 * scale, 32 * scale, 40 * scale, 40 * scale),
         decoration: BoxDecoration(
-          color: KdsColors.cardBg,
+          color: FlowHubColors.cardBg,
           borderRadius: BorderRadius.circular(40 * scale),
           boxShadow: [
             BoxShadow(color: const Color(0x1F1A1C1E), blurRadius: 104 * scale),
@@ -847,12 +847,12 @@ class _ExtractionHistoryRangeDialogState extends State<_ExtractionHistoryRangeDi
               child: Text(
                 'Query Extraction History',
                 style: TextStyle(
-                  fontFamily: kdsFontFamily,
+                  fontFamily: flowhubFontFamily,
                   fontWeight: FontWeight.w700,
                   fontSize: 36 * scale,
                   height: 50 / 36,
                   letterSpacing: -0.36 * scale,
-                  color: KdsColors.textPrimary87,
+                  color: FlowHubColors.textPrimary87,
                 ),
               ),
             ),
@@ -862,7 +862,7 @@ class _ExtractionHistoryRangeDialogState extends State<_ExtractionHistoryRangeDi
               child: Text(
                 'Select the time range to fetch brew records for (make time, powder weight, grind time, extract time, target extract time).',
                 style: TextStyle(
-                  fontFamily: kdsFontFamily,
+                  fontFamily: flowhubFontFamily,
                   fontSize: 24 * scale,
                   height: 32 / 24,
                   letterSpacing: -0.24 * scale,
@@ -895,7 +895,7 @@ class _ExtractionHistoryRangeDialogState extends State<_ExtractionHistoryRangeDi
                       child: Text(
                         'Start must be before End.',
                         style: TextStyle(
-                          fontFamily: kdsFontFamily,
+                          fontFamily: flowhubFontFamily,
                           fontSize: 20 * scale,
                           color: Colors.redAccent,
                         ),
@@ -922,7 +922,7 @@ class _ExtractionHistoryRangeDialogState extends State<_ExtractionHistoryRangeDi
                   child: _DialogButton(
                     scale: scale,
                     label: 'Query',
-                    bg: isValidRange ? KdsColors.navy : const Color(0x421A1C1E),
+                    bg: isValidRange ? FlowHubColors.navy : const Color(0x421A1C1E),
                     fg: Colors.white,
                     shadow: isValidRange,
                     onTap: isValidRange
@@ -974,7 +974,7 @@ class _RangeRow extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
-                  fontFamily: kdsFontFamily,
+                  fontFamily: flowhubFontFamily,
                   fontWeight: FontWeight.w700,
                   fontSize: 24 * scale,
                   color: const Color(0xFF1A1C1E),
@@ -985,7 +985,7 @@ class _RangeRow extends StatelessWidget {
               child: Text(
                 value,
                 style: TextStyle(
-                  fontFamily: kdsFontFamily,
+                  fontFamily: flowhubFontFamily,
                   fontSize: 24 * scale,
                   color: const Color(0xFF1A1C1E),
                 ),
@@ -1038,7 +1038,7 @@ class _ExtractionHistoryResultDialog extends StatelessWidget {
         constraints: BoxConstraints(maxHeight: 900 * scale),
         padding: EdgeInsets.fromLTRB(40 * scale, 32 * scale, 40 * scale, 40 * scale),
         decoration: BoxDecoration(
-          color: KdsColors.cardBg,
+          color: FlowHubColors.cardBg,
           borderRadius: BorderRadius.circular(40 * scale),
           boxShadow: [
             BoxShadow(color: const Color(0x1F1A1C1E), blurRadius: 104 * scale),
@@ -1060,12 +1060,12 @@ class _ExtractionHistoryResultDialog extends StatelessWidget {
                       ? 'No Records Found'
                       : 'Extraction History (${records.length})',
               style: TextStyle(
-                fontFamily: kdsFontFamily,
+                fontFamily: flowhubFontFamily,
                 fontWeight: FontWeight.w700,
                 fontSize: 36 * scale,
                 height: 50 / 36,
                 letterSpacing: -0.36 * scale,
-                color: KdsColors.textPrimary87,
+                color: FlowHubColors.textPrimary87,
               ),
             ),
             SizedBox(height: 24 * scale),
@@ -1074,7 +1074,7 @@ class _ExtractionHistoryResultDialog extends StatelessWidget {
                 'The machine never responded within 10s — it may be busy, disconnected, or slow. '
                 'Check the [Caye] log for "[Sent] 0x35" / "[Received] 0x35" to confirm.',
                 style: TextStyle(
-                  fontFamily: kdsFontFamily,
+                  fontFamily: flowhubFontFamily,
                   fontSize: 24 * scale,
                   color: const Color(0x941A1C1E),
                 ),
@@ -1084,7 +1084,7 @@ class _ExtractionHistoryResultDialog extends StatelessWidget {
                 'The machine responded, but no records exist in the selected time range — '
                 'try widening it, or confirm a brew actually happened within it.',
                 style: TextStyle(
-                  fontFamily: kdsFontFamily,
+                  fontFamily: flowhubFontFamily,
                   fontSize: 24 * scale,
                   color: const Color(0x941A1C1E),
                 ),
@@ -1107,7 +1107,7 @@ class _ExtractionHistoryResultDialog extends StatelessWidget {
             _DialogButton(
               scale: scale,
               label: 'Close',
-              bg: KdsColors.navy,
+              bg: FlowHubColors.navy,
               fg: Colors.white,
               shadow: true,
               onTap: () => Navigator.of(context).pop(),
@@ -1129,12 +1129,12 @@ class _RecordRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final labelStyle = TextStyle(
-      fontFamily: kdsFontFamily,
+      fontFamily: flowhubFontFamily,
       fontSize: 20 * scale,
       color: const Color(0x941A1C1E),
     );
     final valueStyle = TextStyle(
-      fontFamily: kdsFontFamily,
+      fontFamily: flowhubFontFamily,
       fontWeight: FontWeight.w700,
       fontSize: 24 * scale,
       color: const Color(0xFF1A1C1E),
@@ -1157,10 +1157,10 @@ class _RecordRow extends StatelessWidget {
         Text(
           'Shot $index',
           style: TextStyle(
-            fontFamily: kdsFontFamily,
+            fontFamily: flowhubFontFamily,
             fontWeight: FontWeight.w700,
             fontSize: 24 * scale,
-            color: KdsColors.navy,
+            color: FlowHubColors.navy,
           ),
         ),
         SizedBox(height: 12 * scale),

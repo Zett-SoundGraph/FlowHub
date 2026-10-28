@@ -5,7 +5,7 @@ part 'board_update_message.g.dart';
 
 /// Published to `beta/flowhub/board/update` — a deliberately separate,
 /// lightweight broadcast for display boards (Flow Board / Pickup Board),
-/// distinct from `beta/flowhub/leader/update` (the internal KDS
+/// distinct from `beta/flowhub/leader/update` (the internal FlowHub
 /// leader/follower state sync). Boards don't need the full internal Order
 /// snapshot (logs, calibration, printer status, etc.), just enough to place
 /// an order number in the right section and resolve its drink image/text —
@@ -14,7 +14,11 @@ part 'board_update_message.g.dart';
 @freezed
 abstract class BoardUpdateMessage with _$BoardUpdateMessage {
   const factory BoardUpdateMessage({
-    @Default('pickup_board') String boardName,
+    // Generic receiver-group label, not a specific device — this is a
+    // single broadcast both Flow Board and Pickup Board receive
+    // identically, so neither one's own name alone fits here. Never read
+    // by any receiver; purely a human-eyeballing label on a raw payload.
+    @Default('flowBoards') String boardName,
     @Default('') String eventId,
     @Default(0) int version,
     @Default([]) List<BoardOrder> orders,
@@ -26,7 +30,7 @@ abstract class BoardUpdateMessage with _$BoardUpdateMessage {
 
 /// tab is one of OrderTab's names ('newOrder'/'brew'/'call'/'done') — boards
 /// decide their own Preparing/Ready/removed grouping from this rather than
-/// KDS dictating a board-specific status vocabulary.
+/// FlowHub dictating a board-specific status vocabulary.
 @freezed
 abstract class BoardOrder with _$BoardOrder {
   const factory BoardOrder({
@@ -53,7 +57,7 @@ abstract class BoardOrderItem with _$BoardOrderItem {
     @Default('') String skuNo,
     @Default('') String temp,
     // Estimated-time (Nudof) or real-telemetry (Caye) progress, continuously
-    // pushed by KDS — see SubItem's phase-tracking fields for how this is
+    // pushed by FlowHub — see SubItem's phase-tracking fields for how this is
     // computed. Holds at 0.99 for any phase whose completion is confirmed by
     // a real signal rather than the estimate alone.
     @Default(0.0) double progress,

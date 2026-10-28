@@ -8,7 +8,7 @@ abstract class ManufacturingQueueItem with _$ManufacturingQueueItem {
     required String machineIp,
     required String productKey,
     required String machineOrderNo, // format: "1001.01" — sent to Caye machine
-    required String orderNo, // format: "1001" — used to look up KDS order list
+    required String orderNo, // format: "1001" — used to look up FlowHub order list
     required int subItemIndex, // index within Order.items
     @Default(false) bool isExtraShot,
     // Skips the normal 2s "place cup" wait after the machine reports ready —

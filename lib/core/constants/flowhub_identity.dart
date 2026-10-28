@@ -66,18 +66,29 @@ class FlowHubIdentity {
     switch (roleName) {
       case 'leader':
         role = FlowHubRole.leader;
+        // deviceId stays a lowercase/hyphenated slug — it's embedded
+        // directly into MQTT topic paths (beta/system/heartbeat/<deviceId>,
+        // beta/flowhub/follower/<deviceId>/update), where spaces/mixed case
+        // stand out against every other (all-lowercase) topic in the
+        // protocol. deviceName is the free-form "pretty" display label —
+        // see the Fixed identity / Display label doc comment pattern this
+        // mirrors in pickup_table/app_constants.dart etc.
         deviceId = 'flowhub-leader';
-        deviceName = 'FlowHub-Leader';
+        deviceName = 'FlowHub Leader';
         return true;
       case 'follower01':
         role = FlowHubRole.follower;
-        deviceId = 'flowhub-follower01';
-        deviceName = 'FlowHub-Follower01';
+        // Numbered so each unit's own beta/system/heartbeat/<deviceId>
+        // topic stays distinct — two followers publishing retained
+        // heartbeats to the same topic would overwrite each other, making
+        // the fleet monitor unable to tell if one or both are actually online.
+        deviceId = 'flowhub-follower-01';
+        deviceName = 'FlowHub Follower 01';
         return true;
       case 'follower02':
         role = FlowHubRole.follower;
-        deviceId = 'flowhub-follower02';
-        deviceName = 'FlowHub-Follower02';
+        deviceId = 'flowhub-follower-02';
+        deviceName = 'FlowHub Follower 02';
         return true;
       default:
         return false;

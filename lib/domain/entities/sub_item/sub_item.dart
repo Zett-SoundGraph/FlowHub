@@ -46,6 +46,12 @@ abstract class SubItem with _$SubItem {
     @Default(0) int phaseDurationSeconds,
     // Bottom-bar-message-worthy production event — see ProductionStage.
     @Default(ProductionStage.none) ProductionStage stage,
+    // WLED guidance-light color for this one drink (e.g. "#FF0000") — assigned
+    // once, in order, from a fixed 16-color rotation when the order's items
+    // are first created from a real kiosk order (see FlowHubCubit's kiosk-order
+    // handling), so two drinks in the SAME order never collide. Null for
+    // orders that never went through that path (e.g. synthetic test orders).
+    String? ledColorHex,
   }) = _SubItem;
 
   factory SubItem.initial(String menuName) => SubItem(

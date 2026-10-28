@@ -13,7 +13,11 @@ part 'leader_update_message.g.dart';
 abstract class LeaderUpdateMessage with _$LeaderUpdateMessage {
   const factory LeaderUpdateMessage({
     @Default('orders_snapshot') String updateType,
-    @Default('kds') String boardName,
+    // Generic receiver-group label, not a specific device — this is a
+    // single retained broadcast every Follower (F01/F02/...) receives
+    // identically, so no one Follower's own name can go here. Never read
+    // by any receiver; purely a human-eyeballing label on a raw payload.
+    @Default('flowhubF') String boardName,
     @Default('') String eventId,
     // Monotonically increasing — a follower only applies this update if it's
     // newer than the last one it already applied, guarding against
@@ -28,7 +32,7 @@ abstract class LeaderUpdateMessage with _$LeaderUpdateMessage {
     // on the leader (direct WebSocket-server / TCP-socket hardware links) —
     // mirrored here the same way isPrinterConnected already is, so a
     // follower's Device Management screen shows the leader's real state
-    // instead of being permanently stuck at KdsState.initial()'s false.
+    // instead of being permanently stuck at FlowHubState.initial()'s false.
     @Default(false) bool isConnected,
     @Default(false) bool isCayeConnected,
   }) = _LeaderUpdateMessage;
