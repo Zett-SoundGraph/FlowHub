@@ -122,6 +122,11 @@ class FlowUpdaterService {
     Log.i(_tag, 'busy checker ${checker == null ? 'cleared' : 'set'}');
   }
 
+  /// Waits up to [_connectWait] for the SDK connection before a request.
+  /// 1. Return at once when already connected
+  /// 2. Otherwise wait for the first `connected` state
+  /// 3. On timeout or a closed stream, return anyway: the request then
+  ///    fails with the SDK's own error (NOT_CONNECTED) instead of throwing
   Future<void> _awaitConnected(FlowUpdaterClient client) async {
     if (client.connectionState == UpdaterConnectionState.connected) {
       return;

@@ -57,6 +57,18 @@ Expected result:
 - freezed + json_serializable
 - dio + retrofit
 - fpdart
+- flow_updater_sdk (FlowUpdater IPC, see [8.1](#81-flowupdater-link))
+
+`flow_updater_sdk` comes from the FlowUpdater repository over SSH, through
+the host alias `soundgraph` (same source and ref as FlowKioskApp). Define it
+once in `~/.ssh/config` with your own GitHub key, or `flutter pub get` fails:
+
+```text
+Host soundgraph
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/<your-github-key>
+```
 
 ## 3. Quick Setup
 
@@ -144,8 +156,10 @@ lib/
     exceptions/        # shared exception area (for future expansion)
   data/
     exceptions/        # exception handler implementation
+    mappers/           # SDK model -> domain entity mappers (device info)
     models/            # DTO/raw model + mapper
     network/           # dio, interceptor, retrofit client
+    platform/          # platform SDK wrappers (FlowUpdaterService)
     repositories/      # repository implementations
     sources/
       remote/          # websocket/api datasource
@@ -246,6 +260,13 @@ APK script note:
 - Example: `./scripts/build_apk.sh dev` on 2026-10-27's 1st build of the day
   → `CafeBeta_FlowHub_dev_0.10.261027.26102701.apk`
 
+Flavor note:
+
+- The dev flavor has no `versionNameSuffix`: its version name is the same
+  plain `A.BC.YYMMDD` as prod (e.g. `0.10.261027`). The `.dev` applicationId
+  already tells the flavors apart, and FlowUpdater DEV only tracks `.dev`
+  apps, so the version it reports stays in the shared format.
+
 ## 7. KDS Usage Flow
 
 ### 7.1 Main Flow
@@ -297,6 +318,31 @@ flowchart LR
 DI setup location:
 
 - lib/core/di/di.dart
+
+### 8.1 FlowUpdater link
+
+FlowUpdater is the on-device agent that installs and updates Flow Apps
+(FlowManager → MQTT → FlowUpdater). FlowHub talks to it over Android IPC
+through `flow_updater_sdk`; `FlowUpdaterService`
+(`lib/data/platform/flow_updater_service.dart`) is the only class that
+touches the SDK.
+
+- **Connect**: `main_dev.dart` / `main_prod.dart` call `connect()` without
+  awaiting it, so startup never waits for FlowUpdater. The SDK keeps
+  reconnecting in the background when FlowUpdater is missing.
+- **Ready**: `markReady()` runs after the first frame, for FlowUpdater's
+  post-update health check (`IPC_READY`).
+- **Device info**: `FlowHubCubit` loads the device record
+  (`GetDeviceInfoUseCase`) at startup and again on every `device.changed`
+  (`ObserveDeviceInfoChangedUseCase`). It is only logged for now (tag
+  `FlowHub`); nothing in the UI uses it yet.
+- **Update timing** (`update.imminent`): the leader registers a busy check
+  (`SetUpdateBusyCheckUseCase`). It answers BUSY while any order is not DONE
+  or the manufacturing queue holds work; otherwise it saves the live orders
+  and answers ACK. FlowUpdater retries a BUSY device later. Followers
+  register nothing and always answer ACK.
+- Non-Android platforms: the service reports FlowUpdater as unavailable and
+  does nothing.
 
 ## 9. Available Scripts
 

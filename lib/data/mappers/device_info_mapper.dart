@@ -4,6 +4,7 @@ import 'package:flowhub/domain/enums/index.dart';
 
 /// `device.getInfo` replies with the device record itself.
 extension DeviceInfoMapper on sdk.DeviceInfo {
+  /// Maps the SDK's device record to the domain [Device], field by field.
   Device toDomain() => Device(
     deviceId: deviceId,
     deviceName: deviceName,
@@ -48,6 +49,7 @@ extension DeviceInfoMapper on sdk.DeviceInfo {
 }
 
 extension DeviceConfigurationMapper on sdk.DeviceConfiguration {
+  /// Maps the SDK's device configuration to the domain [DeviceConfiguration].
   DeviceConfiguration toDomain() => DeviceConfiguration(
     notification: notification,
     cloudService: DeviceConfigurationCloudService(
