@@ -8,6 +8,7 @@ import 'package:flowhub/core/di/service_locator.dart';
 import 'package:flowhub/core/env/env.dart';
 import 'package:flowhub/data/network/common_interceptor.dart';
 import 'package:flowhub/data/network/rest_client.dart';
+import 'package:flowhub/data/platform/flow_updater_service.dart';
 import 'package:flowhub/domain/repositories/menu_repository.dart';
 
 export 'package:flowhub/core/di/service_locator.dart';
@@ -46,6 +47,9 @@ Future<void> setupLocator(Env env) async {
   getIt.registerSingleton<Dio>(dio);
   getIt.registerSingleton<RestClient>(RestClient(dio, baseUrl: env.apiUrl));
   getIt.registerSingleton<Env>(env);
+  // One FlowUpdater link for the whole app (see FlowUpdaterService). Registered
+  // by hand, like FlowKioskApp, before the generated graph that depends on it.
+  getIt.registerSingleton<FlowUpdaterService>(FlowUpdaterService());
   $initGetIt(getIt);
 
   // MenuRepository loads menu/option data over the network (Google Sheet

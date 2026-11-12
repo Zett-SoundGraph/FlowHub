@@ -13,7 +13,9 @@ import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
 import '../../data/exceptions/common_exception_handler.dart' as _i3;
+import '../../data/platform/flow_updater_service.dart' as _i21;
 import '../../data/repositories/app_control_repository_impl.dart' as _i897;
+import '../../data/repositories/device_repository_impl.dart' as _i34;
 import '../../data/repositories/live_orders_snapshot_repository_impl.dart'
     as _i11;
 import '../../data/repositories/machine_repository_impl.dart' as _i1003;
@@ -38,6 +40,7 @@ import '../../data/sources/remote/printer_data_source.dart' as _i656;
 import '../../data/sources/remote/receipt_printer_data_source.dart' as _i879;
 import '../../domain/exception/base_exception_handler.dart' as _i543;
 import '../../domain/repositories/app_control_repository.dart' as _i617;
+import '../../domain/repositories/device_repository.dart' as _i454;
 import '../../domain/repositories/index.dart' as _i445;
 import '../../domain/repositories/live_orders_snapshot_repository.dart'
     as _i604;
@@ -58,6 +61,11 @@ import '../../domain/usecases/complete_pickup_usecase.dart' as _i500;
 import '../../domain/usecases/connect_order_socket_usecase.dart' as _i6;
 import '../../domain/usecases/create_pickup_table_test_orders_usecase.dart'
     as _i269;
+import '../../domain/usecases/device/get_device_info_usecase.dart' as _i677;
+import '../../domain/usecases/device/observe_device_info_changed_usecase.dart'
+    as _i373;
+import '../../domain/usecases/device/set_update_busy_check_usecase.dart'
+    as _i234;
 import '../../domain/usecases/disconnect_order_socket_usecase.dart' as _i479;
 import '../../domain/usecases/dispose_machine_usecase.dart' as _i135;
 import '../../domain/usecases/dispose_printer_usecase.dart' as _i517;
@@ -152,6 +160,9 @@ _i174.GetIt $initGetIt(
   gh.singleton<_i637.IBarcodeScanDataSource>(
     () => _i637.FlowHubBarcodeScanDataSource(),
   );
+  gh.lazySingleton<_i454.DeviceRepository>(
+    () => _i34.DeviceRepositoryImpl(gh<_i21.FlowUpdaterService>()),
+  );
   gh.singleton<_i422.ICayeMachineDataSource>(
     () => _i422.CayeMachineDataSource(gh<_i819.ICayeKeyDataSource>()),
   );
@@ -182,6 +193,15 @@ _i174.GetIt $initGetIt(
   );
   gh.factory<_i328.ObservePrinterStatusUseCase>(
     () => _i328.ObservePrinterStatusUseCase(gh<_i115.PrinterRepository>()),
+  );
+  gh.factory<_i677.GetDeviceInfoUseCase>(
+    () => _i677.GetDeviceInfoUseCase(gh<_i454.DeviceRepository>()),
+  );
+  gh.factory<_i373.ObserveDeviceInfoChangedUseCase>(
+    () => _i373.ObserveDeviceInfoChangedUseCase(gh<_i454.DeviceRepository>()),
+  );
+  gh.factory<_i234.SetUpdateBusyCheckUseCase>(
+    () => _i234.SetUpdateBusyCheckUseCase(gh<_i454.DeviceRepository>()),
   );
   gh.singleton<_i958.MachineRepository>(
     () => _i1003.MachineRepositoryImpl(gh<_i422.ICayeMachineDataSource>()),
@@ -514,6 +534,9 @@ _i174.GetIt $initGetIt(
       saveLiveOrdersSnapshot: gh<_i28.SaveLiveOrdersSnapshotUseCase>(),
       loadLiveOrdersSnapshot: gh<_i657.LoadLiveOrdersSnapshotUseCase>(),
       clearLiveOrdersSnapshot: gh<_i132.ClearLiveOrdersSnapshotUseCase>(),
+      getDeviceInfo: gh<_i677.GetDeviceInfoUseCase>(),
+      observeDeviceInfoChanged: gh<_i373.ObserveDeviceInfoChangedUseCase>(),
+      setUpdateBusyCheck: gh<_i234.SetUpdateBusyCheckUseCase>(),
       observeLeaderUpdate: gh<_i606.ObserveLeaderUpdateUseCase>(),
       observeFollowerSyncRequest: gh<_i282.ObserveFollowerSyncRequestUseCase>(),
       publishLeaderUpdate: gh<_i563.PublishLeaderUpdateUseCase>(),

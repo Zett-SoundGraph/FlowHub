@@ -16,3 +16,4 @@ export 'pickup_table_theme/pickup_table_theme_color_overrides.dart';
 export 'selected_option/selected_option.dart';
 export 'sync/leader_update_message.dart';
 export 'sync/follower_sync_request.dart';
+export 'device/index.dart';

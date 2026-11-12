@@ -57,3 +57,6 @@ export 'set_caye_api_key_usecase.dart';
 export 'start_calibration_usecase.dart';
 export 'sync_recipe_data_usecase.dart';
 export 'usecase.dart';
+export 'device/get_device_info_usecase.dart';
+export 'device/observe_device_info_changed_usecase.dart';
+export 'device/set_update_busy_check_usecase.dart';
