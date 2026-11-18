@@ -19,8 +19,7 @@ import 'package:flowhub/domain/usecases/clear_live_orders_snapshot_usecase.dart'
 import 'package:flowhub/domain/usecases/complete_cooking_usecase.dart';
 import 'package:flowhub/domain/usecases/complete_pickup_usecase.dart';
 import 'package:flowhub/domain/usecases/connect_order_socket_usecase.dart';
-import 'package:flowhub/domain/usecases/device/get_device_info_usecase.dart';
-import 'package:flowhub/domain/usecases/device/observe_device_info_changed_usecase.dart';
+import 'package:flowhub/domain/repositories/device_repository.dart';
 import 'package:flowhub/domain/usecases/device/set_update_busy_check_usecase.dart';
 import 'package:flowhub/domain/usecases/disconnect_order_socket_usecase.dart';
 import 'package:flowhub/domain/usecases/dispose_machine_usecase.dart';
@@ -171,8 +170,7 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   // FlowUpdater link (see FlowUpdaterService): the device record is only
   // logged for now (no UI yet), and the leader answers update.imminent
   // with ACK/BUSY through [_isBusyForUpdate].
-  final GetDeviceInfoUseCase _getDeviceInfo;
-  final ObserveDeviceInfoChangedUseCase _observeDeviceInfoChanged;
+  final DeviceRepository _deviceRepository;
   final SetUpdateBusyCheckUseCase _setUpdateBusyCheck;
   StreamSubscription<void>? _deviceInfoChangedSubscription;
 
@@ -356,8 +354,7 @@ class FlowHubCubit extends Cubit<FlowHubState> {
     required SaveLiveOrdersSnapshotUseCase saveLiveOrdersSnapshot,
     required LoadLiveOrdersSnapshotUseCase loadLiveOrdersSnapshot,
     required ClearLiveOrdersSnapshotUseCase clearLiveOrdersSnapshot,
-    required GetDeviceInfoUseCase getDeviceInfo,
-    required ObserveDeviceInfoChangedUseCase observeDeviceInfoChanged,
+    required DeviceRepository deviceRepository,
     required SetUpdateBusyCheckUseCase setUpdateBusyCheck,
     required ObserveLeaderUpdateUseCase observeLeaderUpdate,
     required ObserveFollowerSyncRequestUseCase observeFollowerSyncRequest,
@@ -422,8 +419,7 @@ class FlowHubCubit extends Cubit<FlowHubState> {
        _saveLiveOrdersSnapshot = saveLiveOrdersSnapshot,
        _loadLiveOrdersSnapshot = loadLiveOrdersSnapshot,
        _clearLiveOrdersSnapshot = clearLiveOrdersSnapshot,
-       _getDeviceInfo = getDeviceInfo,
-       _observeDeviceInfoChanged = observeDeviceInfoChanged,
+       _deviceRepository = deviceRepository,
        _setUpdateBusyCheck = setUpdateBusyCheck,
        _observeLeaderUpdate = observeLeaderUpdate,
        _observeFollowerSyncRequest = observeFollowerSyncRequest,
@@ -577,7 +573,7 @@ class FlowHubCubit extends Cubit<FlowHubState> {
       _setUpdateBusyCheck(_isBusyForUpdate);
     }
     unawaited(_loadDeviceInfo());
-    _deviceInfoChangedSubscription = _observeDeviceInfoChanged().listen(
+    _deviceInfoChangedSubscription = _deviceRepository.deviceInfoChanges.listen(
       (_) => unawaited(_loadDeviceInfo()),
     );
   }
@@ -585,12 +581,13 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   /// Reads the device record from FlowUpdater and logs it. No UI yet: the
   /// connection check is done through logcat (tag `FlowHub`).
   Future<void> _loadDeviceInfo() async {
-    final result = await _getDeviceInfo(null);
-    if (isClosed) return;
-    result.fold(
-      (e) => Log.w('FlowHub', 'getDeviceInfo failed: ${e.message}'),
-      (device) => Log.i('FlowHub', 'Device info loaded: $device'),
-    );
+    try {
+      final device = await _deviceRepository.getDeviceInfo();
+      if (isClosed) return;
+      Log.i('FlowHub', 'Device info loaded: $device');
+    } catch (e) {
+      Log.w('FlowHub', 'getDeviceInfo failed: $e');
+    }
   }
 
   /// FlowUpdater's update.imminent check (leader only):

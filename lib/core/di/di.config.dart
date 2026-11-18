@@ -63,9 +63,6 @@ import '../../domain/usecases/complete_pickup_usecase.dart' as _i500;
 import '../../domain/usecases/connect_order_socket_usecase.dart' as _i6;
 import '../../domain/usecases/create_pickup_table_test_orders_usecase.dart'
     as _i269;
-import '../../domain/usecases/device/get_device_info_usecase.dart' as _i677;
-import '../../domain/usecases/device/observe_device_info_changed_usecase.dart'
-    as _i373;
 import '../../domain/usecases/device/set_update_busy_check_usecase.dart'
     as _i234;
 import '../../domain/usecases/disconnect_order_socket_usecase.dart' as _i479;
@@ -197,12 +194,6 @@ _i174.GetIt $initGetIt(
   );
   gh.factory<_i328.ObservePrinterStatusUseCase>(
     () => _i328.ObservePrinterStatusUseCase(gh<_i115.PrinterRepository>()),
-  );
-  gh.factory<_i677.GetDeviceInfoUseCase>(
-    () => _i677.GetDeviceInfoUseCase(gh<_i454.DeviceRepository>()),
-  );
-  gh.factory<_i373.ObserveDeviceInfoChangedUseCase>(
-    () => _i373.ObserveDeviceInfoChangedUseCase(gh<_i454.DeviceRepository>()),
   );
   gh.factory<_i234.SetUpdateBusyCheckUseCase>(
     () => _i234.SetUpdateBusyCheckUseCase(gh<_i454.DeviceRepository>()),
@@ -546,8 +537,7 @@ _i174.GetIt $initGetIt(
       saveLiveOrdersSnapshot: gh<_i28.SaveLiveOrdersSnapshotUseCase>(),
       loadLiveOrdersSnapshot: gh<_i657.LoadLiveOrdersSnapshotUseCase>(),
       clearLiveOrdersSnapshot: gh<_i132.ClearLiveOrdersSnapshotUseCase>(),
-      getDeviceInfo: gh<_i677.GetDeviceInfoUseCase>(),
-      observeDeviceInfoChanged: gh<_i373.ObserveDeviceInfoChangedUseCase>(),
+      deviceRepository: gh<_i454.DeviceRepository>(),
       setUpdateBusyCheck: gh<_i234.SetUpdateBusyCheckUseCase>(),
       observeLeaderUpdate: gh<_i606.ObserveLeaderUpdateUseCase>(),
       observeFollowerSyncRequest: gh<_i282.ObserveFollowerSyncRequestUseCase>(),

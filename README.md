@@ -332,10 +332,13 @@ touches the SDK.
   reconnecting in the background when FlowUpdater is missing.
 - **Ready**: `markReady()` runs after the first frame, for FlowUpdater's
   post-update health check (`IPC_READY`).
-- **Device info**: `FlowHubCubit` loads the device record
-  (`GetDeviceInfoUseCase`) at startup and again on every `device.changed`
-  (`ObserveDeviceInfoChangedUseCase`). It is only logged for now (tag
-  `FlowHub`); nothing in the UI uses it yet.
+- **Device info**: `FlowHubCubit` loads the device record from
+  `DeviceRepository` at startup and again on every `device.changed`
+  (`deviceInfoChanges`). The domain `Device` keeps only the fields the app
+  uses (`deviceId`, `deviceName`, `storeId`, `storeName`, `storeCode`,
+  `isRegistered`); add one to `Device` and `device_info_mapper.dart` when
+  needed. It is only logged for now (tag `FlowHub`); nothing in the UI uses
+  it yet.
 - **Update timing** (`update.imminent`): the leader registers a busy check
   (`SetUpdateBusyCheckUseCase`). It answers BUSY while any order is not DONE
   or the manufacturing queue holds work; otherwise it saves the live orders
