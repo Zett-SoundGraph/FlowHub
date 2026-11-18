@@ -42,6 +42,10 @@ abstract class OrderRepository {
   Future<void> createPickupTableTestOrders();
   /// Leader-only: see IMqttDataSource.publishClearTestOrders's doc comment.
   Future<void> clearPickupTableTestOrders();
+  /// Leader-only: see IMqttDataSource.publishFillGridTest's doc comment.
+  Future<void> fillPickupTableTestGrid(int count);
+  /// Leader-only: see IMqttDataSource.publishClearFillGridTest's doc comment.
+  Future<void> clearPickupTableTestGrid();
   Future<void> publishLeaderUpdate(LeaderUpdateMessage message);
   Future<void> publishFollowerSync(FollowerSyncRequest request);
   /// Leader-only: broadcasts the lightweight order summary display boards

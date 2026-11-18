@@ -54,6 +54,8 @@ import '../../domain/repositories/receipt_printer_repository.dart' as _i85;
 import '../../domain/usecases/append_order_history_usecase.dart' as _i7;
 import '../../domain/usecases/check_machine_availability_usecase.dart' as _i893;
 import '../../domain/usecases/clear_live_orders_snapshot_usecase.dart' as _i132;
+import '../../domain/usecases/clear_pickup_table_test_grid_usecase.dart'
+    as _i293;
 import '../../domain/usecases/clear_pickup_table_test_orders_usecase.dart'
     as _i394;
 import '../../domain/usecases/complete_cooking_usecase.dart' as _i110;
@@ -69,6 +71,8 @@ import '../../domain/usecases/device/set_update_busy_check_usecase.dart'
 import '../../domain/usecases/disconnect_order_socket_usecase.dart' as _i479;
 import '../../domain/usecases/dispose_machine_usecase.dart' as _i135;
 import '../../domain/usecases/dispose_printer_usecase.dart' as _i517;
+import '../../domain/usecases/fill_pickup_table_test_grid_usecase.dart'
+    as _i1030;
 import '../../domain/usecases/get_caye_api_key_usecase.dart' as _i1017;
 import '../../domain/usecases/get_fleet_snapshot_usecase.dart' as _i26;
 import '../../domain/usecases/get_label_options_usecase.dart' as _i208;
@@ -349,11 +353,17 @@ _i174.GetIt $initGetIt(
   gh.factory<_i537.PrintReceiptUseCase>(
     () => _i537.PrintReceiptUseCase(gh<_i85.ReceiptPrinterRepository>()),
   );
+  gh.factory<_i293.ClearPickupTableTestGridUseCase>(
+    () => _i293.ClearPickupTableTestGridUseCase(gh<_i507.OrderRepository>()),
+  );
   gh.factory<_i394.ClearPickupTableTestOrdersUseCase>(
     () => _i394.ClearPickupTableTestOrdersUseCase(gh<_i507.OrderRepository>()),
   );
   gh.factory<_i269.CreatePickupTableTestOrdersUseCase>(
     () => _i269.CreatePickupTableTestOrdersUseCase(gh<_i507.OrderRepository>()),
+  );
+  gh.factory<_i1030.FillPickupTableTestGridUseCase>(
+    () => _i1030.FillPickupTableTestGridUseCase(gh<_i507.OrderRepository>()),
   );
   gh.factory<_i35.GetWledOnlineSnapshotUseCase>(
     () => _i35.GetWledOnlineSnapshotUseCase(gh<_i507.OrderRepository>()),
@@ -398,14 +408,6 @@ _i174.GetIt $initGetIt(
   );
   gh.factory<_i7.AppendOrderHistoryUseCase>(
     () => _i7.AppendOrderHistoryUseCase(gh<_i158.OrderHistoryRepository>()),
-  );
-  gh.factory<_i414.PickupTableThemeCubit>(
-    () => _i414.PickupTableThemeCubit(
-      sendTheme: gh<_i356.SendPickupTableThemeUseCase>(),
-      resetTheme: gh<_i53.ResetPickupTableThemeUseCase>(),
-      createTestOrders: gh<_i269.CreatePickupTableTestOrdersUseCase>(),
-      clearTestOrders: gh<_i394.ClearPickupTableTestOrdersUseCase>(),
-    ),
   );
   gh.factory<_i208.GetLabelOptionsUseCase>(
     () => _i208.GetLabelOptionsUseCase(gh<_i196.MenuRepository>()),
@@ -458,6 +460,16 @@ _i174.GetIt $initGetIt(
       publishFollowerSync: gh<_i878.PublishFollowerSyncUseCase>(),
       getCayeApiKey: gh<_i1017.GetCayeApiKeyUseCase>(),
       setCayeApiKey: gh<_i189.SetCayeApiKeyUseCase>(),
+    ),
+  );
+  gh.factory<_i414.PickupTableThemeCubit>(
+    () => _i414.PickupTableThemeCubit(
+      sendTheme: gh<_i356.SendPickupTableThemeUseCase>(),
+      resetTheme: gh<_i53.ResetPickupTableThemeUseCase>(),
+      createTestOrders: gh<_i269.CreatePickupTableTestOrdersUseCase>(),
+      clearTestOrders: gh<_i394.ClearPickupTableTestOrdersUseCase>(),
+      fillTestGrid: gh<_i1030.FillPickupTableTestGridUseCase>(),
+      clearTestGrid: gh<_i293.ClearPickupTableTestGridUseCase>(),
     ),
   );
   gh.factory<_i655.NudofControlCubit>(

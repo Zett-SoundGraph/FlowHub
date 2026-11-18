@@ -150,6 +150,71 @@ class PickupTableThemeScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                SizedBox(height: 40 * scale),
+                Text(
+                  'Cup Matching Test',
+                  style: TextStyle(
+                    fontFamily: flowhubFontFamily,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 26 * scale,
+                    color: const Color(0xFF1A1C1E),
+                  ),
+                ),
+                SizedBox(height: 4 * scale),
+                Text(
+                  'Tiles the ENTIRE table with dashed guide cells of the chosen '
+                  'cup size (1/2/3), so you can place a real cup on any cell to '
+                  'check detection. Unlike Test Orders, a cell goes back to its '
+                  'dashed guide (not away) once the cup is lifted — place and '
+                  'remove as many times as you like.',
+                  style: TextStyle(
+                    fontFamily: flowhubFontFamily,
+                    fontSize: 20 * scale,
+                    color: const Color(0x941A1C1E),
+                  ),
+                ),
+                SizedBox(height: 12 * scale),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ActionButton(
+                        scale: scale,
+                        label: 'Fill Grid (1-Cup)',
+                        tinted: true,
+                        enabled: !state.isSending,
+                        onTap: () => cubit.fillTestGrid(1),
+                      ),
+                    ),
+                    SizedBox(width: 16 * scale),
+                    Expanded(
+                      child: _ActionButton(
+                        scale: scale,
+                        label: 'Fill Grid (2-Cup)',
+                        tinted: true,
+                        enabled: !state.isSending,
+                        onTap: () => cubit.fillTestGrid(2),
+                      ),
+                    ),
+                    SizedBox(width: 16 * scale),
+                    Expanded(
+                      child: _ActionButton(
+                        scale: scale,
+                        label: 'Fill Grid (3-Cup)',
+                        tinted: true,
+                        enabled: !state.isSending,
+                        onTap: () => cubit.fillTestGrid(3),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16 * scale),
+                _ActionButton(
+                  scale: scale,
+                  label: 'Clear Fill Grid Test',
+                  tinted: false,
+                  enabled: !state.isSending,
+                  onTap: cubit.clearTestGrid,
+                ),
               ],
             );
           },

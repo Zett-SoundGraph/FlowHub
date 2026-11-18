@@ -76,6 +76,18 @@ abstract interface class IMqttDataSource {
   /// Leader-only: tells the pickup table to remove every order
   /// [publishCreateTestOrders] created (and nothing else). Not retained.
   Future<void> publishClearTestOrders();
+  /// Leader-only: tells the pickup table to tile its ENTIRE grid with
+  /// [count]-cup groups (1/2/3), so a tester can place a real cup on any
+  /// cell without waiting for a real order — see pickup_table's
+  /// PickupTableCubit._fillGridTest's doc comment for the exact layout.
+  /// Unlike [publishCreateTestOrders], these groups never disappear on
+  /// their own when picked up — they go back to an empty dashed guide
+  /// instead, ready to be placed on again. Same topic/type-field
+  /// convention as [publishPickupTableTheme]. Not retained.
+  Future<void> publishFillGridTest(int count);
+  /// Leader-only: tells the pickup table to remove every group
+  /// [publishFillGridTest] created (and nothing else). Not retained.
+  Future<void> publishClearFillGridTest();
   /// Leader-only: broadcasts the current full state to all followers.
   Future<void> publishLeaderUpdate(LeaderUpdateMessage message);
   /// Follower-only: asks the leader to perform an action.
@@ -853,6 +865,38 @@ class MqttDataSource implements IMqttDataSource {
     client.publishMessage(
         _topicPickuptableCommand, MqttQos.atLeastOnce, builder.payload!);
     Log.d(_tag, 'CLEAR_TEST_ORDERS published');
+  }
+
+  @override
+  Future<void> publishFillGridTest(int count) async {
+    final client = _client;
+    if (client == null ||
+        client.connectionStatus?.state != MqttConnectionState.connected) {
+      Log.w(_tag, 'publishFillGridTest skipped — not connected');
+      return;
+    }
+    final payload = jsonEncode({'type': 'FILL_GRID_TEST', 'count': count});
+    final builder = MqttClientPayloadBuilder();
+    builder.addUTF8String(payload);
+    client.publishMessage(
+        _topicPickuptableCommand, MqttQos.atLeastOnce, builder.payload!);
+    Log.d(_tag, 'FILL_GRID_TEST published (count=$count)');
+  }
+
+  @override
+  Future<void> publishClearFillGridTest() async {
+    final client = _client;
+    if (client == null ||
+        client.connectionStatus?.state != MqttConnectionState.connected) {
+      Log.w(_tag, 'publishClearFillGridTest skipped — not connected');
+      return;
+    }
+    final payload = jsonEncode({'type': 'CLEAR_FILL_GRID_TEST'});
+    final builder = MqttClientPayloadBuilder();
+    builder.addUTF8String(payload);
+    client.publishMessage(
+        _topicPickuptableCommand, MqttQos.atLeastOnce, builder.payload!);
+    Log.d(_tag, 'CLEAR_FILL_GRID_TEST published');
   }
 
   /// Leader-only: broadcasts the full state snapshot to all followers +
