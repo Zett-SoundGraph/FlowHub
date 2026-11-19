@@ -85,6 +85,13 @@ class OrderRepositoryImpl implements OrderRepository {
   Future<void> clearPickupTableTestOrders() => _mqttDataSource.publishClearTestOrders();
 
   @override
+  Future<void> fillPickupTableTestGrid(int count) =>
+      _mqttDataSource.publishFillGridTest(count);
+
+  @override
+  Future<void> clearPickupTableTestGrid() => _mqttDataSource.publishClearFillGridTest();
+
+  @override
   Future<void> publishLeaderUpdate(LeaderUpdateMessage message) =>
       _mqttDataSource.publishLeaderUpdate(message);
 

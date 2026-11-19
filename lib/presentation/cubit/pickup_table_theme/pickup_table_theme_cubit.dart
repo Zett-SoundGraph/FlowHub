@@ -5,8 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import 'package:flowhub/core/theme/pickup_table_theme_color_registry.dart';
 import 'package:flowhub/domain/entities/index.dart';
+import 'package:flowhub/domain/usecases/clear_pickup_table_test_grid_usecase.dart';
 import 'package:flowhub/domain/usecases/clear_pickup_table_test_orders_usecase.dart';
 import 'package:flowhub/domain/usecases/create_pickup_table_test_orders_usecase.dart';
+import 'package:flowhub/domain/usecases/fill_pickup_table_test_grid_usecase.dart';
 import 'package:flowhub/domain/usecases/reset_pickup_table_theme_usecase.dart';
 import 'package:flowhub/domain/usecases/send_pickup_table_theme_usecase.dart';
 
@@ -132,6 +134,8 @@ class PickupTableThemeCubit extends Cubit<PickupTableThemeState> {
   final ResetPickupTableThemeUseCase _resetTheme;
   final CreatePickupTableTestOrdersUseCase _createTestOrders;
   final ClearPickupTableTestOrdersUseCase _clearTestOrders;
+  final FillPickupTableTestGridUseCase _fillTestGrid;
+  final ClearPickupTableTestGridUseCase _clearTestGrid;
 
   // Forest Green is the confirmed default look for the pickup table (see
   // PickupTableState.themeOverride2's own default on the pickup_table
@@ -161,10 +165,14 @@ class PickupTableThemeCubit extends Cubit<PickupTableThemeState> {
     required ResetPickupTableThemeUseCase resetTheme,
     required CreatePickupTableTestOrdersUseCase createTestOrders,
     required ClearPickupTableTestOrdersUseCase clearTestOrders,
+    required FillPickupTableTestGridUseCase fillTestGrid,
+    required ClearPickupTableTestGridUseCase clearTestGrid,
   })  : _sendTheme = sendTheme,
         _resetTheme = resetTheme,
         _createTestOrders = createTestOrders,
         _clearTestOrders = clearTestOrders,
+        _fillTestGrid = fillTestGrid,
+        _clearTestGrid = clearTestGrid,
         super(PickupTableThemeState(
           background: _pickerSeed.background,
           style: _pickerSeed.style,
@@ -255,6 +263,18 @@ class PickupTableThemeCubit extends Cubit<PickupTableThemeState> {
   Future<void> clearTestOrders() async {
     emit(state.copyWith(isSending: true));
     await _clearTestOrders();
+    if (!isClosed) emit(state.copyWith(isSending: false));
+  }
+
+  Future<void> fillTestGrid(int count) async {
+    emit(state.copyWith(isSending: true));
+    await _fillTestGrid(count);
+    if (!isClosed) emit(state.copyWith(isSending: false));
+  }
+
+  Future<void> clearTestGrid() async {
+    emit(state.copyWith(isSending: true));
+    await _clearTestGrid();
     if (!isClosed) emit(state.copyWith(isSending: false));
   }
 

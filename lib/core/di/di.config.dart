@@ -13,7 +13,9 @@ import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
 import '../../data/exceptions/common_exception_handler.dart' as _i3;
+import '../../data/platform/flow_updater_service.dart' as _i21;
 import '../../data/repositories/app_control_repository_impl.dart' as _i897;
+import '../../data/repositories/device_repository_impl.dart' as _i34;
 import '../../data/repositories/live_orders_snapshot_repository_impl.dart'
     as _i11;
 import '../../data/repositories/machine_repository_impl.dart' as _i1003;
@@ -38,6 +40,7 @@ import '../../data/sources/remote/printer_data_source.dart' as _i656;
 import '../../data/sources/remote/receipt_printer_data_source.dart' as _i879;
 import '../../domain/exception/base_exception_handler.dart' as _i543;
 import '../../domain/repositories/app_control_repository.dart' as _i617;
+import '../../domain/repositories/device_repository.dart' as _i454;
 import '../../domain/repositories/index.dart' as _i445;
 import '../../domain/repositories/live_orders_snapshot_repository.dart'
     as _i604;
@@ -51,6 +54,8 @@ import '../../domain/repositories/receipt_printer_repository.dart' as _i85;
 import '../../domain/usecases/append_order_history_usecase.dart' as _i7;
 import '../../domain/usecases/check_machine_availability_usecase.dart' as _i893;
 import '../../domain/usecases/clear_live_orders_snapshot_usecase.dart' as _i132;
+import '../../domain/usecases/clear_pickup_table_test_grid_usecase.dart'
+    as _i293;
 import '../../domain/usecases/clear_pickup_table_test_orders_usecase.dart'
     as _i394;
 import '../../domain/usecases/complete_cooking_usecase.dart' as _i110;
@@ -58,9 +63,13 @@ import '../../domain/usecases/complete_pickup_usecase.dart' as _i500;
 import '../../domain/usecases/connect_order_socket_usecase.dart' as _i6;
 import '../../domain/usecases/create_pickup_table_test_orders_usecase.dart'
     as _i269;
+import '../../domain/usecases/device/set_update_busy_check_usecase.dart'
+    as _i234;
 import '../../domain/usecases/disconnect_order_socket_usecase.dart' as _i479;
 import '../../domain/usecases/dispose_machine_usecase.dart' as _i135;
 import '../../domain/usecases/dispose_printer_usecase.dart' as _i517;
+import '../../domain/usecases/fill_pickup_table_test_grid_usecase.dart'
+    as _i1030;
 import '../../domain/usecases/get_caye_api_key_usecase.dart' as _i1017;
 import '../../domain/usecases/get_fleet_snapshot_usecase.dart' as _i26;
 import '../../domain/usecases/get_label_options_usecase.dart' as _i208;
@@ -152,6 +161,9 @@ _i174.GetIt $initGetIt(
   gh.singleton<_i637.IBarcodeScanDataSource>(
     () => _i637.FlowHubBarcodeScanDataSource(),
   );
+  gh.lazySingleton<_i454.DeviceRepository>(
+    () => _i34.DeviceRepositoryImpl(gh<_i21.FlowUpdaterService>()),
+  );
   gh.singleton<_i422.ICayeMachineDataSource>(
     () => _i422.CayeMachineDataSource(gh<_i819.ICayeKeyDataSource>()),
   );
@@ -182,6 +194,9 @@ _i174.GetIt $initGetIt(
   );
   gh.factory<_i328.ObservePrinterStatusUseCase>(
     () => _i328.ObservePrinterStatusUseCase(gh<_i115.PrinterRepository>()),
+  );
+  gh.factory<_i234.SetUpdateBusyCheckUseCase>(
+    () => _i234.SetUpdateBusyCheckUseCase(gh<_i454.DeviceRepository>()),
   );
   gh.singleton<_i958.MachineRepository>(
     () => _i1003.MachineRepositoryImpl(gh<_i422.ICayeMachineDataSource>()),
@@ -329,11 +344,17 @@ _i174.GetIt $initGetIt(
   gh.factory<_i537.PrintReceiptUseCase>(
     () => _i537.PrintReceiptUseCase(gh<_i85.ReceiptPrinterRepository>()),
   );
+  gh.factory<_i293.ClearPickupTableTestGridUseCase>(
+    () => _i293.ClearPickupTableTestGridUseCase(gh<_i507.OrderRepository>()),
+  );
   gh.factory<_i394.ClearPickupTableTestOrdersUseCase>(
     () => _i394.ClearPickupTableTestOrdersUseCase(gh<_i507.OrderRepository>()),
   );
   gh.factory<_i269.CreatePickupTableTestOrdersUseCase>(
     () => _i269.CreatePickupTableTestOrdersUseCase(gh<_i507.OrderRepository>()),
+  );
+  gh.factory<_i1030.FillPickupTableTestGridUseCase>(
+    () => _i1030.FillPickupTableTestGridUseCase(gh<_i507.OrderRepository>()),
   );
   gh.factory<_i35.GetWledOnlineSnapshotUseCase>(
     () => _i35.GetWledOnlineSnapshotUseCase(gh<_i507.OrderRepository>()),
@@ -378,14 +399,6 @@ _i174.GetIt $initGetIt(
   );
   gh.factory<_i7.AppendOrderHistoryUseCase>(
     () => _i7.AppendOrderHistoryUseCase(gh<_i158.OrderHistoryRepository>()),
-  );
-  gh.factory<_i414.PickupTableThemeCubit>(
-    () => _i414.PickupTableThemeCubit(
-      sendTheme: gh<_i356.SendPickupTableThemeUseCase>(),
-      resetTheme: gh<_i53.ResetPickupTableThemeUseCase>(),
-      createTestOrders: gh<_i269.CreatePickupTableTestOrdersUseCase>(),
-      clearTestOrders: gh<_i394.ClearPickupTableTestOrdersUseCase>(),
-    ),
   );
   gh.factory<_i208.GetLabelOptionsUseCase>(
     () => _i208.GetLabelOptionsUseCase(gh<_i196.MenuRepository>()),
@@ -438,6 +451,16 @@ _i174.GetIt $initGetIt(
       publishFollowerSync: gh<_i878.PublishFollowerSyncUseCase>(),
       getCayeApiKey: gh<_i1017.GetCayeApiKeyUseCase>(),
       setCayeApiKey: gh<_i189.SetCayeApiKeyUseCase>(),
+    ),
+  );
+  gh.factory<_i414.PickupTableThemeCubit>(
+    () => _i414.PickupTableThemeCubit(
+      sendTheme: gh<_i356.SendPickupTableThemeUseCase>(),
+      resetTheme: gh<_i53.ResetPickupTableThemeUseCase>(),
+      createTestOrders: gh<_i269.CreatePickupTableTestOrdersUseCase>(),
+      clearTestOrders: gh<_i394.ClearPickupTableTestOrdersUseCase>(),
+      fillTestGrid: gh<_i1030.FillPickupTableTestGridUseCase>(),
+      clearTestGrid: gh<_i293.ClearPickupTableTestGridUseCase>(),
     ),
   );
   gh.factory<_i655.NudofControlCubit>(
@@ -514,6 +537,8 @@ _i174.GetIt $initGetIt(
       saveLiveOrdersSnapshot: gh<_i28.SaveLiveOrdersSnapshotUseCase>(),
       loadLiveOrdersSnapshot: gh<_i657.LoadLiveOrdersSnapshotUseCase>(),
       clearLiveOrdersSnapshot: gh<_i132.ClearLiveOrdersSnapshotUseCase>(),
+      deviceRepository: gh<_i454.DeviceRepository>(),
+      setUpdateBusyCheck: gh<_i234.SetUpdateBusyCheckUseCase>(),
       observeLeaderUpdate: gh<_i606.ObserveLeaderUpdateUseCase>(),
       observeFollowerSyncRequest: gh<_i282.ObserveFollowerSyncRequestUseCase>(),
       publishLeaderUpdate: gh<_i563.PublishLeaderUpdateUseCase>(),

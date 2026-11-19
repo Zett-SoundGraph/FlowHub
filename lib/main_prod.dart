@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flowhub/core/di/di.dart';
 import 'package:flowhub/core/env/env.dart';
 import 'package:flowhub/core/theme/app_theme.dart';
 import 'package:flowhub/core/utils/mqtt_order_audit_logger.dart';
+import 'package:flowhub/data/platform/flow_updater_service.dart';
 
 import 'presentation/screens/flowhub_screen/flowhub_main_screen.dart';
 
@@ -10,7 +13,17 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupLocator(Env.prod());
   await MqttOrderAuditLogger.init();
+
+  // Don't await it before runApp: if FlowUpdater is missing, startup must not
+  // wait. The SDK keeps reconnecting in the background either way.
+  final FlowUpdaterService updater = getIt<FlowUpdaterService>();
+  unawaited(updater.connect());
   runApp(const FlowHubApp());
+  // UI is up: report ready for FlowUpdater's IPC_READY health check once the
+  // first frame is drawn (same timing as FlowKioskApp).
+  WidgetsBinding.instance.addPostFrameCallback(
+    (_) => unawaited(updater.markReady()),
+  );
 }
 
 class FlowHubApp extends StatelessWidget {

@@ -19,6 +19,8 @@ import 'package:flowhub/domain/usecases/clear_live_orders_snapshot_usecase.dart'
 import 'package:flowhub/domain/usecases/complete_cooking_usecase.dart';
 import 'package:flowhub/domain/usecases/complete_pickup_usecase.dart';
 import 'package:flowhub/domain/usecases/connect_order_socket_usecase.dart';
+import 'package:flowhub/domain/repositories/device_repository.dart';
+import 'package:flowhub/domain/usecases/device/set_update_busy_check_usecase.dart';
 import 'package:flowhub/domain/usecases/disconnect_order_socket_usecase.dart';
 import 'package:flowhub/domain/usecases/dispose_machine_usecase.dart';
 import 'package:flowhub/domain/usecases/dispose_printer_usecase.dart';
@@ -164,6 +166,13 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   final SaveLiveOrdersSnapshotUseCase _saveLiveOrdersSnapshot;
   final LoadLiveOrdersSnapshotUseCase _loadLiveOrdersSnapshot;
   final ClearLiveOrdersSnapshotUseCase _clearLiveOrdersSnapshot;
+
+  // FlowUpdater link (see FlowUpdaterService): the device record is only
+  // logged for now (no UI yet), and the leader answers update.imminent
+  // with ACK/BUSY through [_isBusyForUpdate].
+  final DeviceRepository _deviceRepository;
+  final SetUpdateBusyCheckUseCase _setUpdateBusyCheck;
+  StreamSubscription<void>? _deviceInfoChangedSubscription;
 
   // Leader/follower sync (see FlowHubIdentity) — leader broadcasts full
   // state on every change and executes whatever followers ask for; a
@@ -345,6 +354,8 @@ class FlowHubCubit extends Cubit<FlowHubState> {
     required SaveLiveOrdersSnapshotUseCase saveLiveOrdersSnapshot,
     required LoadLiveOrdersSnapshotUseCase loadLiveOrdersSnapshot,
     required ClearLiveOrdersSnapshotUseCase clearLiveOrdersSnapshot,
+    required DeviceRepository deviceRepository,
+    required SetUpdateBusyCheckUseCase setUpdateBusyCheck,
     required ObserveLeaderUpdateUseCase observeLeaderUpdate,
     required ObserveFollowerSyncRequestUseCase observeFollowerSyncRequest,
     required PublishLeaderUpdateUseCase publishLeaderUpdate,
@@ -408,6 +419,8 @@ class FlowHubCubit extends Cubit<FlowHubState> {
        _saveLiveOrdersSnapshot = saveLiveOrdersSnapshot,
        _loadLiveOrdersSnapshot = loadLiveOrdersSnapshot,
        _clearLiveOrdersSnapshot = clearLiveOrdersSnapshot,
+       _deviceRepository = deviceRepository,
+       _setUpdateBusyCheck = setUpdateBusyCheck,
        _observeLeaderUpdate = observeLeaderUpdate,
        _observeFollowerSyncRequest = observeFollowerSyncRequest,
        _publishLeaderUpdate = publishLeaderUpdate,
@@ -444,6 +457,7 @@ class FlowHubCubit extends Cubit<FlowHubState> {
     } else {
       _initAsLeader();
     }
+    _initFlowUpdater();
   }
 
   /// The Nudof plug's `beta/nudof/online` topic is broker-broadcast and
@@ -544,6 +558,63 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   /// entirely a mirror of whatever the leader last broadcast.
   void _initAsFollower() {
     _leaderUpdateSubscription = _observeLeaderUpdate().listen(_handleLeaderUpdate);
+  }
+
+  // ── FlowUpdater ───────────────────────────────────────────────────────────
+
+  /// 1. Leader only: register [_isBusyForUpdate] as the update.imminent
+  ///    answer. A follower registers nothing, so FlowUpdater gets ACK — its
+  ///    state is only a mirror and comes back from the leader's next
+  ///    broadcast after the restart.
+  /// 2. Load the device record once → [_loadDeviceInfo] (log only for now).
+  /// 3. Reload it whenever FlowUpdater reports `device.changed`.
+  void _initFlowUpdater() {
+    if (FlowHubIdentity.role == FlowHubRole.leader) {
+      _setUpdateBusyCheck(_isBusyForUpdate);
+    }
+    unawaited(_loadDeviceInfo());
+    _deviceInfoChangedSubscription = _deviceRepository.deviceInfoChanges.listen(
+      (_) => unawaited(_loadDeviceInfo()),
+    );
+  }
+
+  /// Reads the device record from FlowUpdater and logs it. No UI yet: the
+  /// connection check is done through logcat (tag `FlowHub`).
+  Future<void> _loadDeviceInfo() async {
+    try {
+      final device = await _deviceRepository.getDeviceInfo();
+      if (isClosed) return;
+      Log.i('FlowHub', 'Device info loaded: $device');
+    } catch (e) {
+      Log.w('FlowHub', 'getDeviceInfo failed: $e');
+    }
+  }
+
+  /// FlowUpdater's update.imminent check (leader only):
+  /// 1. BUSY while any order is not DONE (NEW / BREW / CALL), or while the
+  ///    manufacturing queue still holds work.
+  /// 2. Otherwise save the live orders (all DONE) like
+  ///    [rebootPreservingOrders] does, so they survive the update restart,
+  ///    then answer ACK.
+  Future<bool> _isBusyForUpdate() async {
+    final int activeOrders =
+        state.orders.where((o) => o.currentTab != OrderTab.done).length;
+    if (activeOrders > 0 || _manufacturingQueue.isNotEmpty) {
+      Log.i(
+        'FlowHub',
+        'Update deferred: $activeOrders active order(s), '
+        '${_manufacturingQueue.length} queued manufacturing task(s)',
+      );
+      return true;
+    }
+    if (state.orders.isNotEmpty) {
+      await _saveLiveOrdersSnapshot(state.orders);
+    }
+    Log.i(
+      'FlowHub',
+      'Update allowed: no active orders (${state.orders.length} DONE saved)',
+    );
+    return false;
   }
 
   /// Restores whatever [rebootPreservingOrders] last saved right before this
@@ -1877,6 +1948,9 @@ class FlowHubCubit extends Cubit<FlowHubState> {
     await _calibrationStatusSubscription?.cancel();
     await _leaderUpdateSubscription?.cancel();
     await _followerSyncRequestSubscription?.cancel();
+    await _deviceInfoChangedSubscription?.cancel();
+    // Back to the default answer (ACK) once this cubit can no longer judge.
+    _setUpdateBusyCheck(null);
     _availabilityTimer?.cancel();
     _gaugeTickTimer?.cancel();
     _pendingBroadcastTimer?.cancel();
