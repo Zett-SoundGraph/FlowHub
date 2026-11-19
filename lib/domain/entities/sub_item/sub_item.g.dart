@@ -37,6 +37,9 @@ _SubItem _$SubItemFromJson(Map<String, dynamic> json) => _SubItem(
       $enumDecodeNullable(_$ProductionStageEnumMap, json['stage']) ??
       ProductionStage.none,
   ledColorHex: json['ledColorHex'] as String?,
+  manual: json['manual'] as bool? ?? false,
+  itemType: json['itemType'] as String?,
+  amount: (json['amount'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$SubItemToJson(_SubItem instance) => <String, dynamic>{
@@ -58,6 +61,9 @@ Map<String, dynamic> _$SubItemToJson(_SubItem instance) => <String, dynamic>{
   'phaseDurationSeconds': instance.phaseDurationSeconds,
   'stage': _$ProductionStageEnumMap[instance.stage]!,
   'ledColorHex': instance.ledColorHex,
+  'manual': instance.manual,
+  'itemType': instance.itemType,
+  'amount': instance.amount,
 };
 
 const _$OrderStatusEnumMap = {

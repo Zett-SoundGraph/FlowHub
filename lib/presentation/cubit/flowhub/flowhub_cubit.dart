@@ -24,6 +24,12 @@ import 'package:flowhub/domain/usecases/device/set_update_busy_check_usecase.dar
 import 'package:flowhub/domain/entities/cloud/cloud_identity.dart';
 import 'package:flowhub/domain/repositories/cloud_repository.dart';
 import 'package:flowhub/domain/repositories/order_sync_repository.dart';
+import 'package:flowhub/domain/entities/pos_order/pos_order_ack.dart';
+import 'package:flowhub/domain/entities/pos_order/pos_order_message.dart';
+import 'package:flowhub/domain/exception/base_exception.dart';
+import 'package:fpdart/fpdart.dart' show Either;
+import 'package:flowhub/domain/repositories/pos_order_repository.dart';
+import 'package:flowhub/domain/usecases/pos_order/decide_pos_order_usecase.dart';
 import 'package:flowhub/domain/usecases/disconnect_order_socket_usecase.dart';
 import 'package:flowhub/domain/usecases/dispose_machine_usecase.dart';
 import 'package:flowhub/domain/usecases/dispose_printer_usecase.dart';
@@ -91,6 +97,7 @@ import 'flowhub_state.dart';
 part 'flowhub_cubit_barcode.dart';
 part 'flowhub_cubit_manufacturing.dart';
 part 'flowhub_cubit_printer.dart';
+part 'flowhub_cubit_pos_order.dart';
 
 // Dummy orderNo shared by every queue item startConsecutiveShotTest() adds —
 // never matches a real Order, so _updateSubItemByIndex silently no-ops for
@@ -181,6 +188,19 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   // registered device, and every order change is recorded for order sync.
   final CloudRepository _cloud;
   final OrderSyncRepository _orderSync;
+
+  // POS (Smaregi) orders from Flow Cloud (leader only) — see
+  // flowhub_cubit_pos_order.dart. Handled one at a time through
+  // [_posOrderQueue]; cancel alerts for staff go out on [posCancelAlerts].
+  final PosOrderRepository _posOrders;
+  final DecidePosOrderUseCase _decidePosOrder;
+  StreamSubscription<PosOrderMessage>? _posOrderSubscription;
+  Future<void> _posOrderQueue = Future<void>.value();
+  final StreamController<String> _posCancelAlertController =
+      StreamController<String>.broadcast();
+
+  /// "Cancelled at POS" alerts for orders that were already brewing or done.
+  Stream<String> get posCancelAlerts => _posCancelAlertController.stream;
 
   // Live orders are saved shortly after every change (leader only), so they
   // survive a crash or restart — not just a manual Reboot. Nothing is saved
@@ -374,6 +394,8 @@ class FlowHubCubit extends Cubit<FlowHubState> {
     required SetUpdateBusyCheckUseCase setUpdateBusyCheck,
     required CloudRepository cloud,
     required OrderSyncRepository orderSync,
+    required PosOrderRepository posOrders,
+    required DecidePosOrderUseCase decidePosOrder,
     required ObserveLeaderUpdateUseCase observeLeaderUpdate,
     required ObserveFollowerSyncRequestUseCase observeFollowerSyncRequest,
     required PublishLeaderUpdateUseCase publishLeaderUpdate,
@@ -441,6 +463,8 @@ class FlowHubCubit extends Cubit<FlowHubState> {
        _setUpdateBusyCheck = setUpdateBusyCheck,
        _cloud = cloud,
        _orderSync = orderSync,
+       _posOrders = posOrders,
+       _decidePosOrder = decidePosOrder,
        _observeLeaderUpdate = observeLeaderUpdate,
        _observeFollowerSyncRequest = observeFollowerSyncRequest,
        _publishLeaderUpdate = publishLeaderUpdate,
@@ -523,7 +547,11 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   /// 6. Observe calibration status → [_handleCalibrationStatus]
   /// 7. Observe follower action requests → [_handleFollowerSyncRequest]
   void _initAsLeader() {
-    unawaited(_restoreLiveOrdersSnapshot());
+    final Future<void> restore = _restoreLiveOrdersSnapshot();
+    unawaited(restore);
+    // POS orders wait for the restore, so the duplicate check sees the
+    // orders saved before the restart.
+    _posOrderQueue = restore;
     _scheduleDailyRollover();
     // Both guidance lights power on to idle (solid black) right away, rather
     // than leaving them at whatever real power state they happened to be in
@@ -546,6 +574,7 @@ class FlowHubCubit extends Cubit<FlowHubState> {
       _handlePickupComplete,
     );
     _kioskOrderSubscription = _observeKioskOrder().listen(_handleKioskOrder);
+    _posOrderSubscription = _posOrders.messages.listen(this._handlePosOrder);
     _machineProgressSubscription = _observeMachineProgress().listen(
       this._handleMachineProgress,
     );
@@ -1962,7 +1991,11 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   /// Real Caye pkey + Nudof dispenser string for [item]'s recipe — see
   /// GetRecipeDispenserUseCase; always succeeds (falls back to the sheet's
   /// own safe no-op values), so the Left branch here never actually triggers.
-  RecipeDispenser _recipeDispenserFor(SubItem item) => _getRecipeDispenser((
+  /// A manual item (POS `manual`, or an UNMAPPED SKU) gets no recipe: its
+  /// label QR carries nothing for the dispenser (`N:0`) or Caye (pkey 0).
+  RecipeDispenser _recipeDispenserFor(SubItem item) => item.manual
+      ? (cayePkey: '0', dispenserData: 'N:0')
+      : _getRecipeDispenser((
     skuNo: item.skuNo,
     temp: item.temp,
     selectedOptions: item.selectedOptions,
@@ -2026,6 +2059,8 @@ class FlowHubCubit extends Cubit<FlowHubState> {
     await _qrCompleteSubscription?.cancel();
     await _pickupCompleteSubscription?.cancel();
     await _kioskOrderSubscription?.cancel();
+    await _posOrderSubscription?.cancel();
+    await _posCancelAlertController.close();
     await _machineProgressSubscription?.cancel();
     await _printerStatusSubscription?.cancel();
     await _printerConnectionSubscription?.cancel();

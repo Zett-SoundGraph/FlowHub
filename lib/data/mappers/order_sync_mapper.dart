@@ -25,22 +25,30 @@ extension OrderSyncMapper on Order {
     final String tab = syncTab;
     return <String, dynamic>{
       'orderNo': orderNo,
-      'displayNo': _limit(orderNo, 20),
-      'channel': defaultChannel,
+      'displayNo': _limit(displayNo.isNotEmpty ? displayNo : orderNo, 20),
+      'channel': channel.isNotEmpty ? channel : defaultChannel,
       'tab': tab,
+      if (paymentStatus != null) 'paymentStatus': paymentStatus,
       'totalCups': totalCups,
+      if (totalAmount != null) 'totalAmount': totalAmount,
+      if (currency != null) 'currency': currency,
       if (language.isNotEmpty) 'language': _limit(language, 10),
       'orderedAt': orderedAt,
       'pickedUpAt':
           tab == 'DONE' ? CloudFormat.timestampOrNull(stateEnteredAt) : null,
+      'cancelledAt': CloudFormat.timestampOrNull(cancelledAt),
+      if (cancelledBy != null) 'cancelledBy': cancelledBy,
       'items': <Map<String, dynamic>>[
-        for (int i = 0; i < items.length; i++) items[i].toSyncItem(i + 1),
+        for (int i = 0; i < items.length; i++)
+          items[i].toSyncItem(i + 1, orderCancelled: isCancelled),
       ],
     };
   }
 
-  /// NEW / BREW / CALL / DONE of the item furthest behind (FlowHub tab rule).
+  /// CANCELLED for a cancelled order; otherwise NEW / BREW / CALL / DONE of
+  /// the item furthest behind (FlowHub tab rule).
   String get syncTab {
+    if (isCancelled) return 'CANCELLED';
     if (items.isEmpty) return 'NEW';
     const List<String> order = <String>['NEW', 'BREW', 'CALL', 'DONE'];
     return items
@@ -64,8 +72,11 @@ extension SubItemSyncMapper on SubItem {
   /// Item status for the cloud: the stage, or FAILED for an item in error.
   String get syncStatus => isError ? 'FAILED' : syncStage;
 
-  Map<String, dynamic> toSyncItem(int seq) => <String, dynamic>{
+  /// [orderCancelled]: items not done yet go out as CANCELLED.
+  Map<String, dynamic> toSyncItem(int seq, {bool orderCancelled = false}) =>
+      <String, dynamic>{
     'seq': seq,
+    if (itemType != null) 'itemType': itemType,
     'skuNo': skuNo.isEmpty ? OrderSyncMapper.unmappedSku : skuNo,
     'menuName': menuName,
     if (size.isNotEmpty) 'size': size,
@@ -77,7 +88,8 @@ extension SubItemSyncMapper on SubItem {
           'quantity': option.quantity,
         },
     ],
-    'status': syncStatus,
+    if (amount != null) 'amount': amount,
+    'status': orderCancelled && syncStage != 'DONE' ? 'CANCELLED' : syncStatus,
     if (stage != ProductionStage.none) 'productionStage': stage.name,
   };
 }

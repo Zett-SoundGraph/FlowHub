@@ -170,6 +170,19 @@ extension _FlowHubCubitBarcodeExtension on FlowHubCubit {
     String dispenserData = 'N:0',
     int shotCount = 0,
   }) {
+    // Never sent to a machine: a manual cup (POS `manual` / UNMAPPED SKU)
+    // is made by hand, and a cancelled order makes nothing more.
+    final SubItem? target = subItemIndex >= 0 && subItemIndex < order.items.length
+        ? order.items[subItemIndex]
+        : null;
+    if (order.isCancelled || (target?.manual ?? false)) {
+      Log.i(
+        'FlowHub',
+        '${order.orderNo}#${subItemIndex + 1} not sent to the machine '
+        '(${order.isCancelled ? 'cancelled' : 'manual'})',
+      );
+      return;
+    }
     final String machineIp = NetworkConstants.cayeMachineIp;
     final String seq = (subItemIndex + 1).toString().padLeft(2, '0');
     final String totSeq = order.items.length.toString().padLeft(2, '0');

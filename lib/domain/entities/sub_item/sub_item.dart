@@ -52,6 +52,14 @@ abstract class SubItem with _$SubItem {
     // handling), so two drinks in the SAME order never collide. Null for
     // orders that never went through that path (e.g. synthetic test orders).
     String? ledColorHex,
+    // POS (Smaregi) items: true = made by hand, never sent to a machine
+    // (Caye or the Nudof dispenser). Also true for an UNMAPPED SKU, which
+    // has no recipe.
+    @Default(false) bool manual,
+    // POS item type (COFFEE, TEA, FOOD) and this cup's amount, kept for
+    // order sync; null for kiosk items.
+    String? itemType,
+    int? amount,
   }) = _SubItem;
 
   factory SubItem.initial(String menuName) => SubItem(

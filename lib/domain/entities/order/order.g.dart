@@ -25,6 +25,15 @@ _Order _$OrderFromJson(Map<String, dynamic> json) => _Order(
   stateEnteredAt: json['stateEnteredAt'] == null
       ? null
       : DateTime.parse(json['stateEnteredAt'] as String),
+  displayNo: json['displayNo'] as String? ?? '',
+  channel: json['channel'] as String? ?? '',
+  totalAmount: (json['totalAmount'] as num?)?.toInt(),
+  currency: json['currency'] as String?,
+  paymentStatus: json['paymentStatus'] as String?,
+  cancelledAt: json['cancelledAt'] == null
+      ? null
+      : DateTime.parse(json['cancelledAt'] as String),
+  cancelledBy: json['cancelledBy'] as String?,
 );
 
 Map<String, dynamic> _$OrderToJson(_Order instance) => <String, dynamic>{
@@ -38,4 +47,11 @@ Map<String, dynamic> _$OrderToJson(_Order instance) => <String, dynamic>{
   'bottleCount': instance.bottleCount,
   'receivedAt': instance.receivedAt?.toIso8601String(),
   'stateEnteredAt': instance.stateEnteredAt?.toIso8601String(),
+  'displayNo': instance.displayNo,
+  'channel': instance.channel,
+  'totalAmount': instance.totalAmount,
+  'currency': instance.currency,
+  'paymentStatus': instance.paymentStatus,
+  'cancelledAt': instance.cancelledAt?.toIso8601String(),
+  'cancelledBy': instance.cancelledBy,
 };

@@ -26,6 +26,8 @@ extension OrderTabClassifier on Order {
   /// starting to brew while the others are still queued keeps the whole
   /// order in NEW), and only reaches DONE once every item is picked up.
   OrderTab get currentTab {
+    // Cancelled at the POS: finished, like a picked-up order.
+    if (isCancelled) return OrderTab.done;
     if (items.isEmpty) return OrderTab.newOrder;
     return items
         .map((i) => i.tab)

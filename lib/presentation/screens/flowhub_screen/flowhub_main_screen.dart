@@ -46,6 +46,8 @@ class _FlowHubMainScreenState extends State<FlowHubMainScreen> {
   Timer? _reminderTimer;
   StreamSubscription<FlowHubState>? _reminderOrdersSubscription;
   StreamSubscription<UpdateReminder>? _reminderSubscription;
+  // POS orders cancelled after brewing started (leader only).
+  StreamSubscription<String>? _posCancelSubscription;
 
   @override
   void initState() {
@@ -53,6 +55,7 @@ class _FlowHubMainScreenState extends State<FlowHubMainScreen> {
     _cubit = getIt<FlowHubCubit>();
     if (FlowHubIdentity.role == FlowHubRole.leader) {
       _startUpdateReminder();
+      _posCancelSubscription = _cubit.posCancelAlerts.listen(_showPosCancelAlert);
     }
   }
 
@@ -61,6 +64,7 @@ class _FlowHubMainScreenState extends State<FlowHubMainScreen> {
     _reminderTimer?.cancel();
     _reminderOrdersSubscription?.cancel();
     _reminderSubscription?.cancel();
+    _posCancelSubscription?.cancel();
     _reminder?.close();
     _orderListController.dispose();
     _cubit.close();
@@ -99,6 +103,27 @@ class _FlowHubMainScreenState extends State<FlowHubMainScreen> {
           'Flow App update available for ${reminder.updatableCount} device(s)',
         ),
         action: SnackBarAction(label: 'Open', onPressed: _openUpdateManager),
+      ),
+    );
+  }
+
+  /// "Cancelled at POS" for an order whose cups were already brewing or
+  /// done: staff must check them, so it stays until dismissed.
+  void _showPosCancelAlert(String message) {
+    if (!mounted) {
+      return;
+    }
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('Cancelled at POS'),
+        content: Text(message),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }

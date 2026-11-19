@@ -22,12 +22,30 @@ abstract class Order with _$Order {
     @Default(0) int bottleCount,
     DateTime? receivedAt,
     DateTime? stateEnteredAt,
+    // POS (Smaregi) orders: the customer-facing number, sales channel and
+    // amounts, kept as given and sent back through order sync. Empty / null
+    // for kiosk orders (displayNo then falls back to orderNo).
+    @Default('') String displayNo,
+    @Default('') String channel,
+    int? totalAmount,
+    String? currency,
+    String? paymentStatus,
+    // Set when the order was cancelled at the POS; a cancelled order counts
+    // as finished and syncs with tab CANCELLED.
+    DateTime? cancelledAt,
+    String? cancelledBy,
   }) = _Order;
 
   factory Order.fromJson(Map<String, dynamic> json) => _$OrderFromJson(json);
 
-  String get displayName =>
-      (nickname != null && nickname!.isNotEmpty) ? nickname! : 'NO.$orderNo';
+  /// Whether the order was cancelled at the POS.
+  bool get isCancelled => cancelledAt != null;
+
+  /// POS orders show their customer-facing [displayNo]; kiosk orders, which
+  /// have none, show [orderNo].
+  String get displayName => (nickname != null && nickname!.isNotEmpty)
+      ? nickname!
+      : 'NO.${displayNo.isNotEmpty ? displayNo : orderNo}';
 
   int get totalCups {
     final count = drinkCount + foodCount + bottleCount;

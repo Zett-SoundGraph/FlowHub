@@ -27,6 +27,7 @@ import '../../data/repositories/nudof_repository_impl.dart' as _i315;
 import '../../data/repositories/order_history_repository_impl.dart' as _i1008;
 import '../../data/repositories/order_repository_impl.dart' as _i717;
 import '../../data/repositories/order_sync_repository_impl.dart' as _i147;
+import '../../data/repositories/pos_order_repository_impl.dart' as _i130;
 import '../../data/repositories/printer_repository_impl.dart' as _i514;
 import '../../data/repositories/receipt_printer_repository_impl.dart' as _i211;
 import '../../data/sources/local/caye_key_data_source.dart' as _i819;
@@ -34,6 +35,7 @@ import '../../data/sources/local/live_orders_snapshot_data_source.dart'
     as _i899;
 import '../../data/sources/local/order_history_data_source.dart' as _i871;
 import '../../data/sources/local/order_sync_outbox_data_source.dart' as _i925;
+import '../../data/sources/local/pos_order_tombstone_data_source.dart' as _i588;
 import '../../data/sources/remote/app_control_data_source.dart' as _i82;
 import '../../data/sources/remote/caye_machine_data_source.dart' as _i422;
 import '../../data/sources/remote/cloud_mqtt_data_source.dart' as _i772;
@@ -59,6 +61,7 @@ import '../../domain/repositories/nudof_repository.dart' as _i143;
 import '../../domain/repositories/order_history_repository.dart' as _i158;
 import '../../domain/repositories/order_repository.dart' as _i507;
 import '../../domain/repositories/order_sync_repository.dart' as _i420;
+import '../../domain/repositories/pos_order_repository.dart' as _i437;
 import '../../domain/repositories/printer_repository.dart' as _i115;
 import '../../domain/repositories/receipt_printer_repository.dart' as _i85;
 import '../../domain/usecases/append_order_history_usecase.dart' as _i7;
@@ -116,6 +119,7 @@ import '../../domain/usecases/observe_printer_connection_usecase.dart' as _i397;
 import '../../domain/usecases/observe_printer_status_usecase.dart' as _i328;
 import '../../domain/usecases/observe_qr_complete_usecase.dart' as _i754;
 import '../../domain/usecases/observe_wled_online_usecase.dart' as _i486;
+import '../../domain/usecases/pos_order/decide_pos_order_usecase.dart' as _i311;
 import '../../domain/usecases/print_label_usecase.dart' as _i413;
 import '../../domain/usecases/print_receipt_usecase.dart' as _i537;
 import '../../domain/usecases/publish_board_update_usecase.dart' as _i836;
@@ -167,6 +171,9 @@ _i174.GetIt $initGetIt(
   gh.factory<_i543.BaseExceptionHandler>(() => _i3.CommonExceptionHandler());
   gh.singleton<_i925.IOrderSyncOutboxDataSource>(
     () => _i925.OrderSyncOutboxDataSource(),
+  );
+  gh.singleton<_i588.IPosOrderTombstoneDataSource>(
+    () => _i588.PosOrderTombstoneDataSource(),
   );
   gh.singleton<_i722.IFlowHubSocketDataSource>(
     () => _i722.FlowHubSocketDataSource(),
@@ -371,6 +378,12 @@ _i174.GetIt $initGetIt(
   gh.factory<_i583.StartCalibrationUseCase>(
     () => _i583.StartCalibrationUseCase(gh<_i507.OrderRepository>()),
   );
+  gh.lazySingleton<_i437.PosOrderRepository>(
+    () => _i130.PosOrderRepositoryImpl(
+      gh<_i772.ICloudMqttDataSource>(),
+      gh<_i588.IPosOrderTombstoneDataSource>(),
+    ),
+  );
   gh.factory<_i110.CompleteCookingUseCase>(
     () => _i110.CompleteCookingUseCase(gh<_i445.OrderRepository>()),
   );
@@ -501,6 +514,12 @@ _i174.GetIt $initGetIt(
       setCayeApiKey: gh<_i189.SetCayeApiKeyUseCase>(),
     ),
   );
+  gh.factory<_i311.DecidePosOrderUseCase>(
+    () => _i311.DecidePosOrderUseCase(
+      gh<_i882.CloudRepository>(),
+      gh<_i437.PosOrderRepository>(),
+    ),
+  );
   gh.factory<_i414.PickupTableThemeCubit>(
     () => _i414.PickupTableThemeCubit(
       sendTheme: gh<_i356.SendPickupTableThemeUseCase>(),
@@ -589,6 +608,8 @@ _i174.GetIt $initGetIt(
       setUpdateBusyCheck: gh<_i234.SetUpdateBusyCheckUseCase>(),
       cloud: gh<_i882.CloudRepository>(),
       orderSync: gh<_i420.OrderSyncRepository>(),
+      posOrders: gh<_i437.PosOrderRepository>(),
+      decidePosOrder: gh<_i311.DecidePosOrderUseCase>(),
       observeLeaderUpdate: gh<_i606.ObserveLeaderUpdateUseCase>(),
       observeFollowerSyncRequest: gh<_i282.ObserveFollowerSyncRequestUseCase>(),
       publishLeaderUpdate: gh<_i563.PublishLeaderUpdateUseCase>(),

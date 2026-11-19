@@ -18,7 +18,12 @@ mixin _$Order {
  String get orderNo; String get rawOrderId; String? get nickname;// From the kiosk order — carried through untouched so it can be
 // forwarded to display boards (e.g. Flow Board's status-bar copy) for
 // localization, even though nothing in FlowHub itself renders it yet.
- String get language; List<SubItem> get items; int get drinkCount; int get foodCount; int get bottleCount; DateTime? get receivedAt; DateTime? get stateEnteredAt;
+ String get language; List<SubItem> get items; int get drinkCount; int get foodCount; int get bottleCount; DateTime? get receivedAt; DateTime? get stateEnteredAt;// POS (Smaregi) orders: the customer-facing number, sales channel and
+// amounts, kept as given and sent back through order sync. Empty / null
+// for kiosk orders (displayNo then falls back to orderNo).
+ String get displayNo; String get channel; int? get totalAmount; String? get currency; String? get paymentStatus;// Set when the order was cancelled at the POS; a cancelled order counts
+// as finished and syncs with tab CANCELLED.
+ DateTime? get cancelledAt; String? get cancelledBy;
 /// Create a copy of Order
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -31,16 +36,16 @@ $OrderCopyWith<Order> get copyWith => _$OrderCopyWithImpl<Order>(this as Order, 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Order&&(identical(other.orderNo, orderNo) || other.orderNo == orderNo)&&(identical(other.rawOrderId, rawOrderId) || other.rawOrderId == rawOrderId)&&(identical(other.nickname, nickname) || other.nickname == nickname)&&(identical(other.language, language) || other.language == language)&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.drinkCount, drinkCount) || other.drinkCount == drinkCount)&&(identical(other.foodCount, foodCount) || other.foodCount == foodCount)&&(identical(other.bottleCount, bottleCount) || other.bottleCount == bottleCount)&&(identical(other.receivedAt, receivedAt) || other.receivedAt == receivedAt)&&(identical(other.stateEnteredAt, stateEnteredAt) || other.stateEnteredAt == stateEnteredAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Order&&(identical(other.orderNo, orderNo) || other.orderNo == orderNo)&&(identical(other.rawOrderId, rawOrderId) || other.rawOrderId == rawOrderId)&&(identical(other.nickname, nickname) || other.nickname == nickname)&&(identical(other.language, language) || other.language == language)&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.drinkCount, drinkCount) || other.drinkCount == drinkCount)&&(identical(other.foodCount, foodCount) || other.foodCount == foodCount)&&(identical(other.bottleCount, bottleCount) || other.bottleCount == bottleCount)&&(identical(other.receivedAt, receivedAt) || other.receivedAt == receivedAt)&&(identical(other.stateEnteredAt, stateEnteredAt) || other.stateEnteredAt == stateEnteredAt)&&(identical(other.displayNo, displayNo) || other.displayNo == displayNo)&&(identical(other.channel, channel) || other.channel == channel)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.paymentStatus, paymentStatus) || other.paymentStatus == paymentStatus)&&(identical(other.cancelledAt, cancelledAt) || other.cancelledAt == cancelledAt)&&(identical(other.cancelledBy, cancelledBy) || other.cancelledBy == cancelledBy));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,orderNo,rawOrderId,nickname,language,const DeepCollectionEquality().hash(items),drinkCount,foodCount,bottleCount,receivedAt,stateEnteredAt);
+int get hashCode => Object.hash(runtimeType,orderNo,rawOrderId,nickname,language,const DeepCollectionEquality().hash(items),drinkCount,foodCount,bottleCount,receivedAt,stateEnteredAt,displayNo,channel,totalAmount,currency,paymentStatus,cancelledAt,cancelledBy);
 
 @override
 String toString() {
-  return 'Order(orderNo: $orderNo, rawOrderId: $rawOrderId, nickname: $nickname, language: $language, items: $items, drinkCount: $drinkCount, foodCount: $foodCount, bottleCount: $bottleCount, receivedAt: $receivedAt, stateEnteredAt: $stateEnteredAt)';
+  return 'Order(orderNo: $orderNo, rawOrderId: $rawOrderId, nickname: $nickname, language: $language, items: $items, drinkCount: $drinkCount, foodCount: $foodCount, bottleCount: $bottleCount, receivedAt: $receivedAt, stateEnteredAt: $stateEnteredAt, displayNo: $displayNo, channel: $channel, totalAmount: $totalAmount, currency: $currency, paymentStatus: $paymentStatus, cancelledAt: $cancelledAt, cancelledBy: $cancelledBy)';
 }
 
 
@@ -51,7 +56,7 @@ abstract mixin class $OrderCopyWith<$Res>  {
   factory $OrderCopyWith(Order value, $Res Function(Order) _then) = _$OrderCopyWithImpl;
 @useResult
 $Res call({
- String orderNo, String rawOrderId, String? nickname, String language, List<SubItem> items, int drinkCount, int foodCount, int bottleCount, DateTime? receivedAt, DateTime? stateEnteredAt
+ String orderNo, String rawOrderId, String? nickname, String language, List<SubItem> items, int drinkCount, int foodCount, int bottleCount, DateTime? receivedAt, DateTime? stateEnteredAt, String displayNo, String channel, int? totalAmount, String? currency, String? paymentStatus, DateTime? cancelledAt, String? cancelledBy
 });
 
 
@@ -68,7 +73,7 @@ class _$OrderCopyWithImpl<$Res>
 
 /// Create a copy of Order
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? orderNo = null,Object? rawOrderId = null,Object? nickname = freezed,Object? language = null,Object? items = null,Object? drinkCount = null,Object? foodCount = null,Object? bottleCount = null,Object? receivedAt = freezed,Object? stateEnteredAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? orderNo = null,Object? rawOrderId = null,Object? nickname = freezed,Object? language = null,Object? items = null,Object? drinkCount = null,Object? foodCount = null,Object? bottleCount = null,Object? receivedAt = freezed,Object? stateEnteredAt = freezed,Object? displayNo = null,Object? channel = null,Object? totalAmount = freezed,Object? currency = freezed,Object? paymentStatus = freezed,Object? cancelledAt = freezed,Object? cancelledBy = freezed,}) {
   return _then(_self.copyWith(
 orderNo: null == orderNo ? _self.orderNo : orderNo // ignore: cast_nullable_to_non_nullable
 as String,rawOrderId: null == rawOrderId ? _self.rawOrderId : rawOrderId // ignore: cast_nullable_to_non_nullable
@@ -80,7 +85,14 @@ as int,foodCount: null == foodCount ? _self.foodCount : foodCount // ignore: cas
 as int,bottleCount: null == bottleCount ? _self.bottleCount : bottleCount // ignore: cast_nullable_to_non_nullable
 as int,receivedAt: freezed == receivedAt ? _self.receivedAt : receivedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,stateEnteredAt: freezed == stateEnteredAt ? _self.stateEnteredAt : stateEnteredAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,displayNo: null == displayNo ? _self.displayNo : displayNo // ignore: cast_nullable_to_non_nullable
+as String,channel: null == channel ? _self.channel : channel // ignore: cast_nullable_to_non_nullable
+as String,totalAmount: freezed == totalAmount ? _self.totalAmount : totalAmount // ignore: cast_nullable_to_non_nullable
+as int?,currency: freezed == currency ? _self.currency : currency // ignore: cast_nullable_to_non_nullable
+as String?,paymentStatus: freezed == paymentStatus ? _self.paymentStatus : paymentStatus // ignore: cast_nullable_to_non_nullable
+as String?,cancelledAt: freezed == cancelledAt ? _self.cancelledAt : cancelledAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,cancelledBy: freezed == cancelledBy ? _self.cancelledBy : cancelledBy // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -165,10 +177,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String orderNo,  String rawOrderId,  String? nickname,  String language,  List<SubItem> items,  int drinkCount,  int foodCount,  int bottleCount,  DateTime? receivedAt,  DateTime? stateEnteredAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String orderNo,  String rawOrderId,  String? nickname,  String language,  List<SubItem> items,  int drinkCount,  int foodCount,  int bottleCount,  DateTime? receivedAt,  DateTime? stateEnteredAt,  String displayNo,  String channel,  int? totalAmount,  String? currency,  String? paymentStatus,  DateTime? cancelledAt,  String? cancelledBy)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Order() when $default != null:
-return $default(_that.orderNo,_that.rawOrderId,_that.nickname,_that.language,_that.items,_that.drinkCount,_that.foodCount,_that.bottleCount,_that.receivedAt,_that.stateEnteredAt);case _:
+return $default(_that.orderNo,_that.rawOrderId,_that.nickname,_that.language,_that.items,_that.drinkCount,_that.foodCount,_that.bottleCount,_that.receivedAt,_that.stateEnteredAt,_that.displayNo,_that.channel,_that.totalAmount,_that.currency,_that.paymentStatus,_that.cancelledAt,_that.cancelledBy);case _:
   return orElse();
 
 }
@@ -186,10 +198,10 @@ return $default(_that.orderNo,_that.rawOrderId,_that.nickname,_that.language,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String orderNo,  String rawOrderId,  String? nickname,  String language,  List<SubItem> items,  int drinkCount,  int foodCount,  int bottleCount,  DateTime? receivedAt,  DateTime? stateEnteredAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String orderNo,  String rawOrderId,  String? nickname,  String language,  List<SubItem> items,  int drinkCount,  int foodCount,  int bottleCount,  DateTime? receivedAt,  DateTime? stateEnteredAt,  String displayNo,  String channel,  int? totalAmount,  String? currency,  String? paymentStatus,  DateTime? cancelledAt,  String? cancelledBy)  $default,) {final _that = this;
 switch (_that) {
 case _Order():
-return $default(_that.orderNo,_that.rawOrderId,_that.nickname,_that.language,_that.items,_that.drinkCount,_that.foodCount,_that.bottleCount,_that.receivedAt,_that.stateEnteredAt);case _:
+return $default(_that.orderNo,_that.rawOrderId,_that.nickname,_that.language,_that.items,_that.drinkCount,_that.foodCount,_that.bottleCount,_that.receivedAt,_that.stateEnteredAt,_that.displayNo,_that.channel,_that.totalAmount,_that.currency,_that.paymentStatus,_that.cancelledAt,_that.cancelledBy);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -206,10 +218,10 @@ return $default(_that.orderNo,_that.rawOrderId,_that.nickname,_that.language,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String orderNo,  String rawOrderId,  String? nickname,  String language,  List<SubItem> items,  int drinkCount,  int foodCount,  int bottleCount,  DateTime? receivedAt,  DateTime? stateEnteredAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String orderNo,  String rawOrderId,  String? nickname,  String language,  List<SubItem> items,  int drinkCount,  int foodCount,  int bottleCount,  DateTime? receivedAt,  DateTime? stateEnteredAt,  String displayNo,  String channel,  int? totalAmount,  String? currency,  String? paymentStatus,  DateTime? cancelledAt,  String? cancelledBy)?  $default,) {final _that = this;
 switch (_that) {
 case _Order() when $default != null:
-return $default(_that.orderNo,_that.rawOrderId,_that.nickname,_that.language,_that.items,_that.drinkCount,_that.foodCount,_that.bottleCount,_that.receivedAt,_that.stateEnteredAt);case _:
+return $default(_that.orderNo,_that.rawOrderId,_that.nickname,_that.language,_that.items,_that.drinkCount,_that.foodCount,_that.bottleCount,_that.receivedAt,_that.stateEnteredAt,_that.displayNo,_that.channel,_that.totalAmount,_that.currency,_that.paymentStatus,_that.cancelledAt,_that.cancelledBy);case _:
   return null;
 
 }
@@ -221,7 +233,7 @@ return $default(_that.orderNo,_that.rawOrderId,_that.nickname,_that.language,_th
 @JsonSerializable()
 
 class _Order extends Order {
-  const _Order({this.orderNo = '', this.rawOrderId = '', this.nickname, this.language = '', final  List<SubItem> items = const [], this.drinkCount = 0, this.foodCount = 0, this.bottleCount = 0, this.receivedAt, this.stateEnteredAt}): _items = items,super._();
+  const _Order({this.orderNo = '', this.rawOrderId = '', this.nickname, this.language = '', final  List<SubItem> items = const [], this.drinkCount = 0, this.foodCount = 0, this.bottleCount = 0, this.receivedAt, this.stateEnteredAt, this.displayNo = '', this.channel = '', this.totalAmount, this.currency, this.paymentStatus, this.cancelledAt, this.cancelledBy}): _items = items,super._();
   factory _Order.fromJson(Map<String, dynamic> json) => _$OrderFromJson(json);
 
 @override@JsonKey() final  String orderNo;
@@ -243,6 +255,18 @@ class _Order extends Order {
 @override@JsonKey() final  int bottleCount;
 @override final  DateTime? receivedAt;
 @override final  DateTime? stateEnteredAt;
+// POS (Smaregi) orders: the customer-facing number, sales channel and
+// amounts, kept as given and sent back through order sync. Empty / null
+// for kiosk orders (displayNo then falls back to orderNo).
+@override@JsonKey() final  String displayNo;
+@override@JsonKey() final  String channel;
+@override final  int? totalAmount;
+@override final  String? currency;
+@override final  String? paymentStatus;
+// Set when the order was cancelled at the POS; a cancelled order counts
+// as finished and syncs with tab CANCELLED.
+@override final  DateTime? cancelledAt;
+@override final  String? cancelledBy;
 
 /// Create a copy of Order
 /// with the given fields replaced by the non-null parameter values.
@@ -257,16 +281,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Order&&(identical(other.orderNo, orderNo) || other.orderNo == orderNo)&&(identical(other.rawOrderId, rawOrderId) || other.rawOrderId == rawOrderId)&&(identical(other.nickname, nickname) || other.nickname == nickname)&&(identical(other.language, language) || other.language == language)&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.drinkCount, drinkCount) || other.drinkCount == drinkCount)&&(identical(other.foodCount, foodCount) || other.foodCount == foodCount)&&(identical(other.bottleCount, bottleCount) || other.bottleCount == bottleCount)&&(identical(other.receivedAt, receivedAt) || other.receivedAt == receivedAt)&&(identical(other.stateEnteredAt, stateEnteredAt) || other.stateEnteredAt == stateEnteredAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Order&&(identical(other.orderNo, orderNo) || other.orderNo == orderNo)&&(identical(other.rawOrderId, rawOrderId) || other.rawOrderId == rawOrderId)&&(identical(other.nickname, nickname) || other.nickname == nickname)&&(identical(other.language, language) || other.language == language)&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.drinkCount, drinkCount) || other.drinkCount == drinkCount)&&(identical(other.foodCount, foodCount) || other.foodCount == foodCount)&&(identical(other.bottleCount, bottleCount) || other.bottleCount == bottleCount)&&(identical(other.receivedAt, receivedAt) || other.receivedAt == receivedAt)&&(identical(other.stateEnteredAt, stateEnteredAt) || other.stateEnteredAt == stateEnteredAt)&&(identical(other.displayNo, displayNo) || other.displayNo == displayNo)&&(identical(other.channel, channel) || other.channel == channel)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.currency, currency) || other.currency == currency)&&(identical(other.paymentStatus, paymentStatus) || other.paymentStatus == paymentStatus)&&(identical(other.cancelledAt, cancelledAt) || other.cancelledAt == cancelledAt)&&(identical(other.cancelledBy, cancelledBy) || other.cancelledBy == cancelledBy));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,orderNo,rawOrderId,nickname,language,const DeepCollectionEquality().hash(_items),drinkCount,foodCount,bottleCount,receivedAt,stateEnteredAt);
+int get hashCode => Object.hash(runtimeType,orderNo,rawOrderId,nickname,language,const DeepCollectionEquality().hash(_items),drinkCount,foodCount,bottleCount,receivedAt,stateEnteredAt,displayNo,channel,totalAmount,currency,paymentStatus,cancelledAt,cancelledBy);
 
 @override
 String toString() {
-  return 'Order(orderNo: $orderNo, rawOrderId: $rawOrderId, nickname: $nickname, language: $language, items: $items, drinkCount: $drinkCount, foodCount: $foodCount, bottleCount: $bottleCount, receivedAt: $receivedAt, stateEnteredAt: $stateEnteredAt)';
+  return 'Order(orderNo: $orderNo, rawOrderId: $rawOrderId, nickname: $nickname, language: $language, items: $items, drinkCount: $drinkCount, foodCount: $foodCount, bottleCount: $bottleCount, receivedAt: $receivedAt, stateEnteredAt: $stateEnteredAt, displayNo: $displayNo, channel: $channel, totalAmount: $totalAmount, currency: $currency, paymentStatus: $paymentStatus, cancelledAt: $cancelledAt, cancelledBy: $cancelledBy)';
 }
 
 
@@ -277,7 +301,7 @@ abstract mixin class _$OrderCopyWith<$Res> implements $OrderCopyWith<$Res> {
   factory _$OrderCopyWith(_Order value, $Res Function(_Order) _then) = __$OrderCopyWithImpl;
 @override @useResult
 $Res call({
- String orderNo, String rawOrderId, String? nickname, String language, List<SubItem> items, int drinkCount, int foodCount, int bottleCount, DateTime? receivedAt, DateTime? stateEnteredAt
+ String orderNo, String rawOrderId, String? nickname, String language, List<SubItem> items, int drinkCount, int foodCount, int bottleCount, DateTime? receivedAt, DateTime? stateEnteredAt, String displayNo, String channel, int? totalAmount, String? currency, String? paymentStatus, DateTime? cancelledAt, String? cancelledBy
 });
 
 
@@ -294,7 +318,7 @@ class __$OrderCopyWithImpl<$Res>
 
 /// Create a copy of Order
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? orderNo = null,Object? rawOrderId = null,Object? nickname = freezed,Object? language = null,Object? items = null,Object? drinkCount = null,Object? foodCount = null,Object? bottleCount = null,Object? receivedAt = freezed,Object? stateEnteredAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? orderNo = null,Object? rawOrderId = null,Object? nickname = freezed,Object? language = null,Object? items = null,Object? drinkCount = null,Object? foodCount = null,Object? bottleCount = null,Object? receivedAt = freezed,Object? stateEnteredAt = freezed,Object? displayNo = null,Object? channel = null,Object? totalAmount = freezed,Object? currency = freezed,Object? paymentStatus = freezed,Object? cancelledAt = freezed,Object? cancelledBy = freezed,}) {
   return _then(_Order(
 orderNo: null == orderNo ? _self.orderNo : orderNo // ignore: cast_nullable_to_non_nullable
 as String,rawOrderId: null == rawOrderId ? _self.rawOrderId : rawOrderId // ignore: cast_nullable_to_non_nullable
@@ -306,7 +330,14 @@ as int,foodCount: null == foodCount ? _self.foodCount : foodCount // ignore: cas
 as int,bottleCount: null == bottleCount ? _self.bottleCount : bottleCount // ignore: cast_nullable_to_non_nullable
 as int,receivedAt: freezed == receivedAt ? _self.receivedAt : receivedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,stateEnteredAt: freezed == stateEnteredAt ? _self.stateEnteredAt : stateEnteredAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,displayNo: null == displayNo ? _self.displayNo : displayNo // ignore: cast_nullable_to_non_nullable
+as String,channel: null == channel ? _self.channel : channel // ignore: cast_nullable_to_non_nullable
+as String,totalAmount: freezed == totalAmount ? _self.totalAmount : totalAmount // ignore: cast_nullable_to_non_nullable
+as int?,currency: freezed == currency ? _self.currency : currency // ignore: cast_nullable_to_non_nullable
+as String?,paymentStatus: freezed == paymentStatus ? _self.paymentStatus : paymentStatus // ignore: cast_nullable_to_non_nullable
+as String?,cancelledAt: freezed == cancelledAt ? _self.cancelledAt : cancelledAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,cancelledBy: freezed == cancelledBy ? _self.cancelledBy : cancelledBy // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
