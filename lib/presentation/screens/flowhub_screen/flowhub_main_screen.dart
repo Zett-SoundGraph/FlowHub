@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flowhub/core/constants/flowhub_identity.dart';
 import 'package:flowhub/core/di/di.dart';
 import 'package:flowhub/core/theme/app_theme.dart';
 import 'package:flowhub/domain/entities/index.dart';
@@ -10,6 +13,9 @@ import 'package:flowhub/presentation/screens/caye_management_screen/caye_managem
 import 'package:flowhub/presentation/screens/device_management_screen/device_management_screen.dart';
 import 'package:flowhub/presentation/screens/nudof_management_screen/nudof_management_screen.dart';
 import 'package:flowhub/presentation/screens/pickup_table_theme_screen/pickup_table_theme_screen.dart';
+import 'package:flowhub/presentation/cubit/update_manager/update_manager_cubit.dart';
+import 'package:flowhub/presentation/cubit/update_manager/update_reminder_cubit.dart';
+import 'package:flowhub/presentation/screens/update_manager_screen/update_manager_screen.dart';
 import 'package:flowhub/presentation/widgets/wled_test_toggle.dart';
 
 import 'flowhub_main_texts.dart';
@@ -33,17 +39,80 @@ class _FlowHubMainScreenState extends State<FlowHubMainScreen> {
   bool _searchCommitted = false;
   bool _isDrawerOpen = false;
 
+  // Flow Installation reminder (leader only): checked every minute and on
+  // every state change; shows a snackbar when updates are available.
+  static const Duration _reminderTick = Duration(minutes: 1);
+  UpdateReminderCubit? _reminder;
+  Timer? _reminderTimer;
+  StreamSubscription<FlowHubState>? _reminderOrdersSubscription;
+  StreamSubscription<UpdateReminder>? _reminderSubscription;
+
   @override
   void initState() {
     super.initState();
     _cubit = getIt<FlowHubCubit>();
+    if (FlowHubIdentity.role == FlowHubRole.leader) {
+      _startUpdateReminder();
+    }
   }
 
   @override
   void dispose() {
+    _reminderTimer?.cancel();
+    _reminderOrdersSubscription?.cancel();
+    _reminderSubscription?.cancel();
+    _reminder?.close();
     _orderListController.dispose();
     _cubit.close();
     super.dispose();
+  }
+
+  /// 1. Checks the reminder every [_reminderTick] and on each state change
+  ///    (idle = there are orders and all of them are DONE).
+  /// 2. Shows the snackbar for every new reminder.
+  void _startUpdateReminder() {
+    final UpdateReminderCubit reminder = getIt<UpdateReminderCubit>();
+    _reminder = reminder;
+    _reminderSubscription = reminder.stream.listen(_showUpdateReminder);
+    _reminderOrdersSubscription = _cubit.stream.listen(
+      (FlowHubState state) => unawaited(reminder.check(idle: _isIdle(state))),
+    );
+    _reminderTimer = Timer.periodic(
+      _reminderTick,
+      (_) => unawaited(reminder.check(idle: _isIdle(_cubit.state))),
+    );
+    unawaited(reminder.check(idle: _isIdle(_cubit.state)));
+  }
+
+  bool _isIdle(FlowHubState state) =>
+      state.orders.isNotEmpty &&
+      state.orders.every((Order o) => o.currentTab == OrderTab.done);
+
+  void _showUpdateReminder(UpdateReminder reminder) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 10),
+        content: Text(
+          'Flow App update available for ${reminder.updatableCount} device(s)',
+        ),
+        action: SnackBarAction(label: 'Open', onPressed: _openUpdateManager),
+      ),
+    );
+  }
+
+  void _openUpdateManager() {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => BlocProvider<UpdateManagerCubit>(
+          create: (_) => getIt<UpdateManagerCubit>()..load(),
+          child: const UpdateManagerScreen(),
+        ),
+      ),
+    );
   }
 
   /// Marks a sub-item as cooked via [FlowHubCubit] and confirms it to the operator.
@@ -464,6 +533,13 @@ class _FlowHubMainScreenState extends State<FlowHubMainScreen> {
                             ),
                           );
                         },
+                        onUpdateManager:
+                            FlowHubIdentity.role == FlowHubRole.leader
+                                ? () {
+                                    setState(() => _isDrawerOpen = false);
+                                    _openUpdateManager();
+                                  }
+                                : null,
                         onRecipeSync: () => _cubit.syncRecipeData(),
                         onCalibration: () {
                           setState(() => _isDrawerOpen = false);

@@ -15,7 +15,10 @@ import 'package:injectable/injectable.dart' as _i526;
 import '../../data/exceptions/common_exception_handler.dart' as _i3;
 import '../../data/platform/flow_updater_service.dart' as _i21;
 import '../../data/repositories/app_control_repository_impl.dart' as _i897;
+import '../../data/repositories/cloud_repository_impl.dart' as _i373;
 import '../../data/repositories/device_repository_impl.dart' as _i34;
+import '../../data/repositories/flow_installation_repository_impl.dart'
+    as _i703;
 import '../../data/repositories/live_orders_snapshot_repository_impl.dart'
     as _i11;
 import '../../data/repositories/machine_repository_impl.dart' as _i1003;
@@ -23,14 +26,18 @@ import '../../data/repositories/menu_repository_impl.dart' as _i668;
 import '../../data/repositories/nudof_repository_impl.dart' as _i315;
 import '../../data/repositories/order_history_repository_impl.dart' as _i1008;
 import '../../data/repositories/order_repository_impl.dart' as _i717;
+import '../../data/repositories/order_sync_repository_impl.dart' as _i147;
 import '../../data/repositories/printer_repository_impl.dart' as _i514;
 import '../../data/repositories/receipt_printer_repository_impl.dart' as _i211;
 import '../../data/sources/local/caye_key_data_source.dart' as _i819;
 import '../../data/sources/local/live_orders_snapshot_data_source.dart'
     as _i899;
 import '../../data/sources/local/order_history_data_source.dart' as _i871;
+import '../../data/sources/local/order_sync_outbox_data_source.dart' as _i925;
 import '../../data/sources/remote/app_control_data_source.dart' as _i82;
 import '../../data/sources/remote/caye_machine_data_source.dart' as _i422;
+import '../../data/sources/remote/cloud_mqtt_data_source.dart' as _i772;
+import '../../data/sources/remote/flow_manager_api_data_source.dart' as _i401;
 import '../../data/sources/remote/flowhub_barcode_scan_data_source.dart'
     as _i637;
 import '../../data/sources/remote/flowhub_socket_data_source.dart' as _i722;
@@ -40,7 +47,9 @@ import '../../data/sources/remote/printer_data_source.dart' as _i656;
 import '../../data/sources/remote/receipt_printer_data_source.dart' as _i879;
 import '../../domain/exception/base_exception_handler.dart' as _i543;
 import '../../domain/repositories/app_control_repository.dart' as _i617;
+import '../../domain/repositories/cloud_repository.dart' as _i882;
 import '../../domain/repositories/device_repository.dart' as _i454;
+import '../../domain/repositories/flow_installation_repository.dart' as _i597;
 import '../../domain/repositories/index.dart' as _i445;
 import '../../domain/repositories/live_orders_snapshot_repository.dart'
     as _i604;
@@ -49,6 +58,7 @@ import '../../domain/repositories/menu_repository.dart' as _i196;
 import '../../domain/repositories/nudof_repository.dart' as _i143;
 import '../../domain/repositories/order_history_repository.dart' as _i158;
 import '../../domain/repositories/order_repository.dart' as _i507;
+import '../../domain/repositories/order_sync_repository.dart' as _i420;
 import '../../domain/repositories/printer_repository.dart' as _i115;
 import '../../domain/repositories/receipt_printer_repository.dart' as _i85;
 import '../../domain/usecases/append_order_history_usecase.dart' as _i7;
@@ -142,6 +152,10 @@ import '../../presentation/cubit/flowhub/flowhub_cubit.dart' as _i112;
 import '../../presentation/cubit/nudof/nudof_control_cubit.dart' as _i655;
 import '../../presentation/cubit/pickup_table_theme/pickup_table_theme_cubit.dart'
     as _i414;
+import '../../presentation/cubit/update_manager/update_manager_cubit.dart'
+    as _i354;
+import '../../presentation/cubit/update_manager/update_reminder_cubit.dart'
+    as _i440;
 
 // initializes the registration of main-scope dependencies inside of GetIt
 _i174.GetIt $initGetIt(
@@ -151,6 +165,9 @@ _i174.GetIt $initGetIt(
 }) {
   final gh = _i526.GetItHelper(getIt, environment, environmentFilter);
   gh.factory<_i543.BaseExceptionHandler>(() => _i3.CommonExceptionHandler());
+  gh.singleton<_i925.IOrderSyncOutboxDataSource>(
+    () => _i925.OrderSyncOutboxDataSource(),
+  );
   gh.singleton<_i722.IFlowHubSocketDataSource>(
     () => _i722.FlowHubSocketDataSource(),
   );
@@ -158,6 +175,7 @@ _i174.GetIt $initGetIt(
   gh.singleton<_i819.ICayeKeyDataSource>(() => _i819.CayeKeyDataSource());
   gh.singleton<_i82.IAppControlDataSource>(() => _i82.AppControlDataSource());
   gh.singleton<_i126.IMqttDataSource>(() => _i126.MqttDataSource());
+  gh.singleton<_i772.ICloudMqttDataSource>(() => _i772.CloudMqttDataSource());
   gh.singleton<_i637.IBarcodeScanDataSource>(
     () => _i637.FlowHubBarcodeScanDataSource(),
   );
@@ -168,6 +186,15 @@ _i174.GetIt $initGetIt(
     () => _i422.CayeMachineDataSource(gh<_i819.ICayeKeyDataSource>()),
   );
   gh.singleton<_i656.IPrinterDataSource>(() => _i656.PrinterDataSource());
+  gh.singleton<_i401.IFlowManagerApiDataSource>(
+    () => _i401.FlowManagerApiDataSource(),
+  );
+  gh.lazySingleton<_i420.OrderSyncRepository>(
+    () => _i147.OrderSyncRepositoryImpl(
+      gh<_i772.ICloudMqttDataSource>(),
+      gh<_i925.IOrderSyncOutboxDataSource>(),
+    ),
+  );
   gh.singleton<_i507.OrderRepository>(
     () => _i717.OrderRepositoryImpl(
       gh<_i722.IFlowHubSocketDataSource>(),
@@ -182,6 +209,9 @@ _i174.GetIt $initGetIt(
   );
   gh.singleton<_i871.IOrderHistoryDataSource>(
     () => _i871.OrderHistoryDataSource(),
+  );
+  gh.lazySingleton<_i882.CloudRepository>(
+    () => _i373.CloudRepositoryImpl(gh<_i772.ICloudMqttDataSource>()),
   );
   gh.singleton<_i899.ILiveOrdersSnapshotDataSource>(
     () => _i899.LiveOrdersSnapshotDataSource(),
@@ -270,6 +300,12 @@ _i174.GetIt $initGetIt(
   gh.singleton<_i85.ReceiptPrinterRepository>(
     () => _i211.ReceiptPrinterRepositoryImpl(
       gh<_i879.IReceiptPrinterDataSource>(),
+    ),
+  );
+  gh.lazySingleton<_i597.FlowInstallationRepository>(
+    () => _i703.FlowInstallationRepositoryImpl(
+      gh<_i401.IFlowManagerApiDataSource>(),
+      gh<_i772.ICloudMqttDataSource>(),
     ),
   );
   gh.factory<_i193.GetNudofOnlineSnapshotUseCase>(
@@ -392,6 +428,18 @@ _i174.GetIt $initGetIt(
     () => _i102.FleetMonitorCubit(
       getFleetSnapshot: gh<_i26.GetFleetSnapshotUseCase>(),
       observeFleetHeartbeats: gh<_i398.ObserveFleetHeartbeatsUseCase>(),
+    ),
+  );
+  gh.factory<_i354.UpdateManagerCubit>(
+    () => _i354.UpdateManagerCubit(
+      gh<_i454.DeviceRepository>(),
+      gh<_i597.FlowInstallationRepository>(),
+    ),
+  );
+  gh.factory<_i440.UpdateReminderCubit>(
+    () => _i440.UpdateReminderCubit(
+      gh<_i454.DeviceRepository>(),
+      gh<_i597.FlowInstallationRepository>(),
     ),
   );
   gh.factory<_i804.ObserveMachineProgressUseCase>(
@@ -539,6 +587,8 @@ _i174.GetIt $initGetIt(
       clearLiveOrdersSnapshot: gh<_i132.ClearLiveOrdersSnapshotUseCase>(),
       deviceRepository: gh<_i454.DeviceRepository>(),
       setUpdateBusyCheck: gh<_i234.SetUpdateBusyCheckUseCase>(),
+      cloud: gh<_i882.CloudRepository>(),
+      orderSync: gh<_i420.OrderSyncRepository>(),
       observeLeaderUpdate: gh<_i606.ObserveLeaderUpdateUseCase>(),
       observeFollowerSyncRequest: gh<_i282.ObserveFollowerSyncRequestUseCase>(),
       publishLeaderUpdate: gh<_i563.PublishLeaderUpdateUseCase>(),

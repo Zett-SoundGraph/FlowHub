@@ -21,6 +21,9 @@ import 'package:flowhub/domain/usecases/complete_pickup_usecase.dart';
 import 'package:flowhub/domain/usecases/connect_order_socket_usecase.dart';
 import 'package:flowhub/domain/repositories/device_repository.dart';
 import 'package:flowhub/domain/usecases/device/set_update_busy_check_usecase.dart';
+import 'package:flowhub/domain/entities/cloud/cloud_identity.dart';
+import 'package:flowhub/domain/repositories/cloud_repository.dart';
+import 'package:flowhub/domain/repositories/order_sync_repository.dart';
 import 'package:flowhub/domain/usecases/disconnect_order_socket_usecase.dart';
 import 'package:flowhub/domain/usecases/dispose_machine_usecase.dart';
 import 'package:flowhub/domain/usecases/dispose_printer_usecase.dart';
@@ -173,6 +176,19 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   final DeviceRepository _deviceRepository;
   final SetUpdateBusyCheckUseCase _setUpdateBusyCheck;
   StreamSubscription<void>? _deviceInfoChangedSubscription;
+
+  // Flow Cloud (leader only): the session starts once FlowUpdater reports a
+  // registered device, and every order change is recorded for order sync.
+  final CloudRepository _cloud;
+  final OrderSyncRepository _orderSync;
+
+  // Live orders are saved shortly after every change (leader only), so they
+  // survive a crash or restart — not just a manual Reboot. Nothing is saved
+  // until the previous run's orders are restored, so an early empty state
+  // can't overwrite them.
+  static const _persistOrdersDelay = Duration(seconds: 1);
+  Timer? _persistOrdersTimer;
+  bool _liveOrdersRestored = false;
 
   // Leader/follower sync (see FlowHubIdentity) — leader broadcasts full
   // state on every change and executes whatever followers ask for; a
@@ -356,6 +372,8 @@ class FlowHubCubit extends Cubit<FlowHubState> {
     required ClearLiveOrdersSnapshotUseCase clearLiveOrdersSnapshot,
     required DeviceRepository deviceRepository,
     required SetUpdateBusyCheckUseCase setUpdateBusyCheck,
+    required CloudRepository cloud,
+    required OrderSyncRepository orderSync,
     required ObserveLeaderUpdateUseCase observeLeaderUpdate,
     required ObserveFollowerSyncRequestUseCase observeFollowerSyncRequest,
     required PublishLeaderUpdateUseCase publishLeaderUpdate,
@@ -421,6 +439,8 @@ class FlowHubCubit extends Cubit<FlowHubState> {
        _clearLiveOrdersSnapshot = clearLiveOrdersSnapshot,
        _deviceRepository = deviceRepository,
        _setUpdateBusyCheck = setUpdateBusyCheck,
+       _cloud = cloud,
+       _orderSync = orderSync,
        _observeLeaderUpdate = observeLeaderUpdate,
        _observeFollowerSyncRequest = observeFollowerSyncRequest,
        _publishLeaderUpdate = publishLeaderUpdate,
@@ -578,16 +598,53 @@ class FlowHubCubit extends Cubit<FlowHubState> {
     );
   }
 
-  /// Reads the device record from FlowUpdater and logs it. No UI yet: the
-  /// connection check is done through logcat (tag `FlowHub`).
+  /// Reads the device record from FlowUpdater and logs it.
+  /// 1. Leader only: starts (or restarts) the Flow Cloud session as the
+  ///    store and device in the record — see [_startCloud].
   Future<void> _loadDeviceInfo() async {
+    final Device device;
     try {
-      final device = await _deviceRepository.getDeviceInfo();
-      if (isClosed) return;
-      Log.i('FlowHub', 'Device info loaded: $device');
+      device = await _deviceRepository.getDeviceInfo();
     } catch (e) {
       Log.w('FlowHub', 'getDeviceInfo failed: $e');
+      return;
     }
+    if (isClosed) return;
+    Log.i('FlowHub', 'Device info loaded: $device');
+    if (FlowHubIdentity.role == FlowHubRole.leader) {
+      unawaited(_startCloud(device));
+    }
+  }
+
+  /// Connects to Flow Cloud as [device]'s store and hub. Logs and waits for
+  /// the next `device.changed` when the device is not registered yet.
+  /// 1. Starts the cloud session.
+  /// 2. Records the live orders once, so order sync starts and resends any
+  ///    version still pending from before a restart.
+  Future<void> _startCloud(Device device) async {
+    try {
+      final CloudIdentity? identity = await _cloud.start(device);
+      Log.i(
+        'FlowHub',
+        identity == null
+            ? 'Cloud session waits for device registration'
+            : 'Cloud session started as $identity',
+      );
+    } catch (e) {
+      Log.w('FlowHub', 'Cloud session failed: $e');
+    }
+    if (isClosed) return;
+    _recordOrdersForSync(state.orders);
+  }
+
+  /// Records [orders] for Flow Cloud order sync. A failure is only logged:
+  /// the outbox resends on the next change or reconnect.
+  void _recordOrdersForSync(List<Order> orders) {
+    unawaited(
+      _orderSync.record(orders).catchError(
+        (Object e) => Log.w('FlowHub', 'Order sync record failed: $e'),
+      ),
+    );
   }
 
   /// FlowUpdater's update.imminent check (leader only):
@@ -623,15 +680,20 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   /// A normal cold boot (not preceded by a manual Reboot) simply finds
   /// nothing to restore — [LoadLiveOrdersSnapshotUseCase] returns an empty
   /// list, so [state] is left at its already-empty initial value.
+  ///
+  /// The snapshot is no longer cleared after loading: live orders are now
+  /// saved after every change (see [_persistLiveOrders]), so the file always
+  /// holds the current orders. Only the daily rollover clears it.
   Future<void> _restoreLiveOrdersSnapshot() async {
     final orders = (await _loadLiveOrdersSnapshot(null)).fold(
       (_) => const <Order>[],
       (r) => r,
     );
+    _liveOrdersRestored = true;
     if (orders.isNotEmpty) {
       emit(state.copyWith(orders: orders));
     }
-    await _clearLiveOrdersSnapshot(null);
+    // await _clearLiveOrdersSnapshot(null);
   }
 
   /// Schedules a one-shot [rebootClearingOrders] for the next local
@@ -668,6 +730,10 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   /// preserves orders) doesn't accumulate forever across the exhibition.
   Future<void> rebootClearingOrders() async {
     if (FlowHubIdentity.role == FlowHubRole.leader) {
+      // Stop the pending save first, or it could write the orders back
+      // right after they were cleared.
+      _persistOrdersTimer?.cancel();
+      _liveOrdersRestored = false;
       await _clearLiveOrdersSnapshot(null);
     }
     await _restartApp(null);
@@ -942,10 +1008,32 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   /// a single choke point so no mutating method needs to remember to sync.
   @override
   void emit(FlowHubState newState) {
+    final List<Order> previousOrders = state.orders;
     super.emit(newState);
     if (FlowHubIdentity.role == FlowHubRole.leader) {
       _scheduleLeaderBroadcast();
+      if (!identical(previousOrders, newState.orders)) {
+        _schedulePersistLiveOrders();
+      }
     }
+  }
+
+  /// Debounces [_persistLiveOrders] to [_persistOrdersDelay] after the last
+  /// order change (the gauge tick changes orders twice a second).
+  void _schedulePersistLiveOrders() {
+    if (!_liveOrdersRestored) return;
+    _persistOrdersTimer?.cancel();
+    _persistOrdersTimer = Timer(_persistOrdersDelay, _persistLiveOrders);
+  }
+
+  /// 1. Saves the live orders, so they survive a crash or restart.
+  /// 2. Records them for Flow Cloud order sync (changed orders get a new
+  ///    version and are published).
+  void _persistLiveOrders() {
+    if (isClosed || !_liveOrdersRestored) return;
+    final List<Order> orders = state.orders;
+    unawaited(_saveLiveOrdersSnapshot(orders));
+    _recordOrdersForSync(orders);
   }
 
   /// Throttle-with-trailing-edge: publishes immediately if the last
@@ -1955,6 +2043,7 @@ class FlowHubCubit extends Cubit<FlowHubState> {
     _gaugeTickTimer?.cancel();
     _pendingBroadcastTimer?.cancel();
     _dailyRolloverTimer?.cancel();
+    _persistOrdersTimer?.cancel();
     _disposeMachine(null);
     _disposePrinter(null);
     _disconnectOrderSocket();

@@ -13,6 +13,8 @@ class FlowHubNavigationDrawer extends StatelessWidget {
   final VoidCallback onMachineControl;
   final VoidCallback onNudofControl;
   final VoidCallback onPickupTableTheme;
+  // Flow Installation (Update Manager); null hides the row (followers).
+  final VoidCallback? onUpdateManager;
   final VoidCallback onCalibration;
   final VoidCallback onReboot;
   final Future<void> Function() onRecipeSync;
@@ -27,6 +29,7 @@ class FlowHubNavigationDrawer extends StatelessWidget {
     required this.onMachineControl,
     required this.onNudofControl,
     required this.onPickupTableTheme,
+    this.onUpdateManager,
     required this.onCalibration,
     required this.onReboot,
     required this.onRecipeSync,
@@ -142,6 +145,19 @@ class FlowHubNavigationDrawer extends StatelessWidget {
                 onTap: onPickupTableTheme,
               ),
             ),
+            if (onUpdateManager != null)
+              Positioned(
+                left: 0,
+                top: 632 * scale,
+                child: _DrawerRow(
+                  scale: scale,
+                  iconAsset: 'assets/images/sync.png',
+                  iconWidth: 36,
+                  iconHeight: 36,
+                  label: 'Update Manager',
+                  onTap: onUpdateManager!,
+                ),
+              ),
             Positioned(
               left: 48 * scale,
               bottom: 76 * scale + (98 * scale + 24 * scale) * 2,
