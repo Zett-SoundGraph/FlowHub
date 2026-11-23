@@ -9,6 +9,7 @@ import 'package:flowhub/presentation/cubit/caye/caye_management_state.dart';
 import 'package:flowhub/presentation/cubit/flowhub/flowhub_cubit.dart';
 import 'package:flowhub/presentation/cubit/flowhub/flowhub_state.dart';
 import 'package:flowhub/presentation/widgets/flowhub_sub_screen_scaffold.dart';
+import 'caye_key_scanner_dialog.dart';
 
 /// figmaImage/11_Caye Machine Control.png + its -1/-2/-3/-4 confirm-dialog
 /// variants. Rinsing/Cleaning/Sync dispatch the same real MQTT commands the
@@ -313,6 +314,22 @@ class _ApiKeySection extends StatefulWidget {
 
 class _ApiKeySectionState extends State<_ApiKeySection> {
   final _controller = TextEditingController();
+
+  /// Scans the machine's key QR into the field (not saved until Save).
+  Future<void> _scanKey() async {
+    final String? key = await CayeKeyScannerDialog.show(
+      context,
+      scale: widget.scale,
+    );
+    if (!mounted || key == null) return;
+    setState(() {
+      _controller.text = key;
+      _justSaved = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Key scanned — check it, then tap Save')),
+    );
+  }
   // Guards against re-overwriting the operator's in-progress typing every
   // time the cubit rebuilds — the saved key loads asynchronously (see
   // CayeManagementCubit's constructor), so the field's initial text can only
@@ -384,6 +401,28 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
                       borderRadius: BorderRadius.circular(16 * scale),
                       borderSide: const BorderSide(color: Color(0x421A1C1E)),
                     ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 16 * scale),
+              // Fills the field from the key QR on the machine; Save still
+              // stores it.
+              InkWell(
+                borderRadius: BorderRadius.circular(16 * scale),
+                onTap: _scanKey,
+                child: Container(
+                  height: 68 * scale,
+                  width: 68 * scale,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16 * scale),
+                    border: Border.all(color: FlowHubColors.navy, width: 2),
+                  ),
+                  child: Icon(
+                    Icons.qr_code_scanner,
+                    size: 40 * scale,
+                    color: FlowHubColors.navy,
                   ),
                 ),
               ),
