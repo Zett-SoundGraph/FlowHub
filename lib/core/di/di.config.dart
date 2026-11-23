@@ -19,22 +19,19 @@ import '../../data/repositories/cloud_repository_impl.dart' as _i373;
 import '../../data/repositories/device_repository_impl.dart' as _i34;
 import '../../data/repositories/flow_installation_repository_impl.dart'
     as _i703;
-import '../../data/repositories/live_orders_snapshot_repository_impl.dart'
-    as _i11;
 import '../../data/repositories/machine_repository_impl.dart' as _i1003;
 import '../../data/repositories/menu_repository_impl.dart' as _i668;
 import '../../data/repositories/nudof_repository_impl.dart' as _i315;
 import '../../data/repositories/order_history_repository_impl.dart' as _i1008;
 import '../../data/repositories/order_repository_impl.dart' as _i717;
-import '../../data/repositories/order_sync_repository_impl.dart' as _i147;
+import '../../data/repositories/order_store_repository_impl.dart' as _i321;
+import '../../data/repositories/order_sync_sender.dart' as _i945;
 import '../../data/repositories/pos_order_repository_impl.dart' as _i130;
 import '../../data/repositories/printer_repository_impl.dart' as _i514;
 import '../../data/repositories/receipt_printer_repository_impl.dart' as _i211;
 import '../../data/sources/local/caye_key_data_source.dart' as _i819;
-import '../../data/sources/local/live_orders_snapshot_data_source.dart'
-    as _i899;
 import '../../data/sources/local/order_history_data_source.dart' as _i871;
-import '../../data/sources/local/order_sync_outbox_data_source.dart' as _i925;
+import '../../data/sources/local/order_local_data_source.dart' as _i146;
 import '../../data/sources/local/pos_order_tombstone_data_source.dart' as _i588;
 import '../../data/sources/remote/app_control_data_source.dart' as _i82;
 import '../../data/sources/remote/caye_machine_data_source.dart' as _i422;
@@ -53,20 +50,17 @@ import '../../domain/repositories/cloud_repository.dart' as _i882;
 import '../../domain/repositories/device_repository.dart' as _i454;
 import '../../domain/repositories/flow_installation_repository.dart' as _i597;
 import '../../domain/repositories/index.dart' as _i445;
-import '../../domain/repositories/live_orders_snapshot_repository.dart'
-    as _i604;
 import '../../domain/repositories/machine_repository.dart' as _i958;
 import '../../domain/repositories/menu_repository.dart' as _i196;
 import '../../domain/repositories/nudof_repository.dart' as _i143;
 import '../../domain/repositories/order_history_repository.dart' as _i158;
 import '../../domain/repositories/order_repository.dart' as _i507;
-import '../../domain/repositories/order_sync_repository.dart' as _i420;
+import '../../domain/repositories/order_store_repository.dart' as _i601;
 import '../../domain/repositories/pos_order_repository.dart' as _i437;
 import '../../domain/repositories/printer_repository.dart' as _i115;
 import '../../domain/repositories/receipt_printer_repository.dart' as _i85;
 import '../../domain/usecases/append_order_history_usecase.dart' as _i7;
 import '../../domain/usecases/check_machine_availability_usecase.dart' as _i893;
-import '../../domain/usecases/clear_live_orders_snapshot_usecase.dart' as _i132;
 import '../../domain/usecases/clear_pickup_table_test_grid_usecase.dart'
     as _i293;
 import '../../domain/usecases/clear_pickup_table_test_orders_usecase.dart'
@@ -101,7 +95,6 @@ import '../../domain/usecases/get_recipe_popup_ingredients_usecase.dart'
 import '../../domain/usecases/get_recipe_timing_usecase.dart' as _i534;
 import '../../domain/usecases/get_recipe_version_usecase.dart' as _i279;
 import '../../domain/usecases/get_wled_online_snapshot_usecase.dart' as _i35;
-import '../../domain/usecases/load_live_orders_snapshot_usecase.dart' as _i657;
 import '../../domain/usecases/observe_barcode_scan_usecase.dart' as _i174;
 import '../../domain/usecases/observe_calibration_status_usecase.dart' as _i5;
 import '../../domain/usecases/observe_fleet_heartbeats_usecase.dart' as _i398;
@@ -135,7 +128,6 @@ import '../../domain/usecases/reconnect_printer_usecase.dart' as _i593;
 import '../../domain/usecases/reset_pickup_table_theme_usecase.dart' as _i53;
 import '../../domain/usecases/resolve_menu_options_usecase.dart' as _i617;
 import '../../domain/usecases/restart_app_usecase.dart' as _i703;
-import '../../domain/usecases/save_live_orders_snapshot_usecase.dart' as _i28;
 import '../../domain/usecases/send_cancel_command_usecase.dart' as _i622;
 import '../../domain/usecases/send_cleaning_command_usecase.dart' as _i682;
 import '../../domain/usecases/send_extraction_history_usecase.dart' as _i819;
@@ -169,9 +161,6 @@ _i174.GetIt $initGetIt(
 }) {
   final gh = _i526.GetItHelper(getIt, environment, environmentFilter);
   gh.factory<_i543.BaseExceptionHandler>(() => _i3.CommonExceptionHandler());
-  gh.singleton<_i925.IOrderSyncOutboxDataSource>(
-    () => _i925.OrderSyncOutboxDataSource(),
-  );
   gh.singleton<_i588.IPosOrderTombstoneDataSource>(
     () => _i588.PosOrderTombstoneDataSource(),
   );
@@ -186,6 +175,7 @@ _i174.GetIt $initGetIt(
   gh.singleton<_i637.IBarcodeScanDataSource>(
     () => _i637.FlowHubBarcodeScanDataSource(),
   );
+  gh.singleton<_i146.IOrderLocalDataSource>(() => _i146.OrderLocalDataSource());
   gh.lazySingleton<_i454.DeviceRepository>(
     () => _i34.DeviceRepositoryImpl(gh<_i21.FlowUpdaterService>()),
   );
@@ -195,12 +185,6 @@ _i174.GetIt $initGetIt(
   gh.singleton<_i656.IPrinterDataSource>(() => _i656.PrinterDataSource());
   gh.singleton<_i401.IFlowManagerApiDataSource>(
     () => _i401.FlowManagerApiDataSource(),
-  );
-  gh.lazySingleton<_i420.OrderSyncRepository>(
-    () => _i147.OrderSyncRepositoryImpl(
-      gh<_i772.ICloudMqttDataSource>(),
-      gh<_i925.IOrderSyncOutboxDataSource>(),
-    ),
   );
   gh.singleton<_i507.OrderRepository>(
     () => _i717.OrderRepositoryImpl(
@@ -220,9 +204,6 @@ _i174.GetIt $initGetIt(
   gh.lazySingleton<_i882.CloudRepository>(
     () => _i373.CloudRepositoryImpl(gh<_i772.ICloudMqttDataSource>()),
   );
-  gh.singleton<_i899.ILiveOrdersSnapshotDataSource>(
-    () => _i899.LiveOrdersSnapshotDataSource(),
-  );
   gh.singleton<_i879.IReceiptPrinterDataSource>(
     () => _i879.ReceiptPrinterDataSource(),
   );
@@ -237,6 +218,13 @@ _i174.GetIt $initGetIt(
   );
   gh.singleton<_i958.MachineRepository>(
     () => _i1003.MachineRepositoryImpl(gh<_i422.ICayeMachineDataSource>()),
+  );
+  gh.lazySingleton<_i945.OrderSyncSender>(
+    () => _i945.OrderSyncSender(
+      gh<_i772.ICloudMqttDataSource>(),
+      gh<_i146.IOrderLocalDataSource>(),
+      gh<_i401.IFlowManagerApiDataSource>(),
+    ),
   );
   gh.factory<_i517.DisposePrinterUseCase>(
     () => _i517.DisposePrinterUseCase(gh<_i115.PrinterRepository>()),
@@ -432,11 +420,6 @@ _i174.GetIt $initGetIt(
   gh.factory<_i356.SendPickupTableThemeUseCase>(
     () => _i356.SendPickupTableThemeUseCase(gh<_i507.OrderRepository>()),
   );
-  gh.singleton<_i604.LiveOrdersSnapshotRepository>(
-    () => _i11.LiveOrdersSnapshotRepositoryImpl(
-      gh<_i899.ILiveOrdersSnapshotDataSource>(),
-    ),
-  );
   gh.factory<_i102.FleetMonitorCubit>(
     () => _i102.FleetMonitorCubit(
       getFleetSnapshot: gh<_i26.GetFleetSnapshotUseCase>(),
@@ -453,6 +436,12 @@ _i174.GetIt $initGetIt(
     () => _i440.UpdateReminderCubit(
       gh<_i454.DeviceRepository>(),
       gh<_i597.FlowInstallationRepository>(),
+    ),
+  );
+  gh.lazySingleton<_i601.OrderStoreRepository>(
+    () => _i321.OrderStoreRepositoryImpl(
+      gh<_i146.IOrderLocalDataSource>(),
+      gh<_i945.OrderSyncSender>(),
     ),
   );
   gh.factory<_i804.ObserveMachineProgressUseCase>(
@@ -520,39 +509,6 @@ _i174.GetIt $initGetIt(
       gh<_i437.PosOrderRepository>(),
     ),
   );
-  gh.factory<_i414.PickupTableThemeCubit>(
-    () => _i414.PickupTableThemeCubit(
-      sendTheme: gh<_i356.SendPickupTableThemeUseCase>(),
-      resetTheme: gh<_i53.ResetPickupTableThemeUseCase>(),
-      createTestOrders: gh<_i269.CreatePickupTableTestOrdersUseCase>(),
-      clearTestOrders: gh<_i394.ClearPickupTableTestOrdersUseCase>(),
-      fillTestGrid: gh<_i1030.FillPickupTableTestGridUseCase>(),
-      clearTestGrid: gh<_i293.ClearPickupTableTestGridUseCase>(),
-    ),
-  );
-  gh.factory<_i655.NudofControlCubit>(
-    () => _i655.NudofControlCubit(
-      observeOnline: gh<_i1055.ObserveNudofOnlineUseCase>(),
-      getOnlineSnapshot: gh<_i193.GetNudofOnlineSnapshotUseCase>(),
-      observePower: gh<_i993.ObserveNudofPowerUseCase>(),
-      setPower: gh<_i875.SetNudofPowerUseCase>(),
-    ),
-  );
-  gh.factory<_i132.ClearLiveOrdersSnapshotUseCase>(
-    () => _i132.ClearLiveOrdersSnapshotUseCase(
-      gh<_i604.LiveOrdersSnapshotRepository>(),
-    ),
-  );
-  gh.factory<_i657.LoadLiveOrdersSnapshotUseCase>(
-    () => _i657.LoadLiveOrdersSnapshotUseCase(
-      gh<_i604.LiveOrdersSnapshotRepository>(),
-    ),
-  );
-  gh.factory<_i28.SaveLiveOrdersSnapshotUseCase>(
-    () => _i28.SaveLiveOrdersSnapshotUseCase(
-      gh<_i604.LiveOrdersSnapshotRepository>(),
-    ),
-  );
   gh.factory<_i112.FlowHubCubit>(
     () => _i112.FlowHubCubit(
       completeCooking: gh<_i110.CompleteCookingUseCase>(),
@@ -601,13 +557,10 @@ _i174.GetIt $initGetIt(
       disposeMachine: gh<_i135.DisposeMachineUseCase>(),
       disposePrinter: gh<_i517.DisposePrinterUseCase>(),
       restartApp: gh<_i703.RestartAppUseCase>(),
-      saveLiveOrdersSnapshot: gh<_i28.SaveLiveOrdersSnapshotUseCase>(),
-      loadLiveOrdersSnapshot: gh<_i657.LoadLiveOrdersSnapshotUseCase>(),
-      clearLiveOrdersSnapshot: gh<_i132.ClearLiveOrdersSnapshotUseCase>(),
       deviceRepository: gh<_i454.DeviceRepository>(),
       setUpdateBusyCheck: gh<_i234.SetUpdateBusyCheckUseCase>(),
       cloud: gh<_i882.CloudRepository>(),
-      orderSync: gh<_i420.OrderSyncRepository>(),
+      orderStore: gh<_i601.OrderStoreRepository>(),
       posOrders: gh<_i437.PosOrderRepository>(),
       decidePosOrder: gh<_i311.DecidePosOrderUseCase>(),
       observeLeaderUpdate: gh<_i606.ObserveLeaderUpdateUseCase>(),
@@ -625,6 +578,24 @@ _i174.GetIt $initGetIt(
       sendTimeSync: gh<_i627.SendTimeSyncUseCase>(),
       setCayeApiKey: gh<_i189.SetCayeApiKeyUseCase>(),
       publishWledApi: gh<_i761.PublishWledApiUseCase>(),
+    ),
+  );
+  gh.factory<_i414.PickupTableThemeCubit>(
+    () => _i414.PickupTableThemeCubit(
+      sendTheme: gh<_i356.SendPickupTableThemeUseCase>(),
+      resetTheme: gh<_i53.ResetPickupTableThemeUseCase>(),
+      createTestOrders: gh<_i269.CreatePickupTableTestOrdersUseCase>(),
+      clearTestOrders: gh<_i394.ClearPickupTableTestOrdersUseCase>(),
+      fillTestGrid: gh<_i1030.FillPickupTableTestGridUseCase>(),
+      clearTestGrid: gh<_i293.ClearPickupTableTestGridUseCase>(),
+    ),
+  );
+  gh.factory<_i655.NudofControlCubit>(
+    () => _i655.NudofControlCubit(
+      observeOnline: gh<_i1055.ObserveNudofOnlineUseCase>(),
+      getOnlineSnapshot: gh<_i193.GetNudofOnlineSnapshotUseCase>(),
+      observePower: gh<_i993.ObserveNudofPowerUseCase>(),
+      setPower: gh<_i875.SetNudofPowerUseCase>(),
     ),
   );
   return getIt;

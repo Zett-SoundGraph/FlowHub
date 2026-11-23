@@ -40,6 +40,14 @@ _SubItem _$SubItemFromJson(Map<String, dynamic> json) => _SubItem(
   manual: json['manual'] as bool? ?? false,
   itemType: json['itemType'] as String?,
   amount: (json['amount'] as num?)?.toInt(),
+  brewStartedAt: json['brewStartedAt'] == null
+      ? null
+      : DateTime.parse(json['brewStartedAt'] as String),
+  brewStartedBy: json['brewStartedBy'] as String?,
+  brewCompletedAt: json['brewCompletedAt'] == null
+      ? null
+      : DateTime.parse(json['brewCompletedAt'] as String),
+  brewCompletedBy: json['brewCompletedBy'] as String?,
 );
 
 Map<String, dynamic> _$SubItemToJson(_SubItem instance) => <String, dynamic>{
@@ -64,6 +72,10 @@ Map<String, dynamic> _$SubItemToJson(_SubItem instance) => <String, dynamic>{
   'manual': instance.manual,
   'itemType': instance.itemType,
   'amount': instance.amount,
+  'brewStartedAt': instance.brewStartedAt?.toIso8601String(),
+  'brewStartedBy': instance.brewStartedBy,
+  'brewCompletedAt': instance.brewCompletedAt?.toIso8601String(),
+  'brewCompletedBy': instance.brewCompletedBy,
 };
 
 const _$OrderStatusEnumMap = {

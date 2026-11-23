@@ -34,6 +34,7 @@ _Order _$OrderFromJson(Map<String, dynamic> json) => _Order(
       ? null
       : DateTime.parse(json['cancelledAt'] as String),
   cancelledBy: json['cancelledBy'] as String?,
+  pickedUpBy: json['pickedUpBy'] as String?,
 );
 
 Map<String, dynamic> _$OrderToJson(_Order instance) => <String, dynamic>{
@@ -54,4 +55,5 @@ Map<String, dynamic> _$OrderToJson(_Order instance) => <String, dynamic>{
   'paymentStatus': instance.paymentStatus,
   'cancelledAt': instance.cancelledAt?.toIso8601String(),
   'cancelledBy': instance.cancelledBy,
+  'pickedUpBy': instance.pickedUpBy,
 };

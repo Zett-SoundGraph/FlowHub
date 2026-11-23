@@ -18,7 +18,8 @@ class OrderRepositoryImpl implements OrderRepository {
   Stream<bool> get connectionStream => _socketDataSource.connectionStream;
 
   @override
-  Stream<({String orderNo, String menuName})> get pickupCompleteStream =>
+  // Stream<({String orderNo, String menuName})> get pickupCompleteStream =>
+  Stream<({String orderNo, String menuName, String source})> get pickupCompleteStream =>
       _mqttDataSource.pickupCompleteStream;
 
   @override
@@ -29,7 +30,9 @@ class OrderRepositoryImpl implements OrderRepository {
   Stream<String> get barcodeScanStream => _mqttDataSource.barcodeScanStream;
 
   @override
-  Stream<String> get qrCompleteStream => _mqttDataSource.qrCompleteStream;
+  // Stream<String> get qrCompleteStream => _mqttDataSource.qrCompleteStream;
+  Stream<({String raw, String source})> get qrCompleteStream =>
+      _mqttDataSource.qrCompleteStream;
 
   @override
   Stream<FleetHeartbeatEvent> get fleetHeartbeatStream =>

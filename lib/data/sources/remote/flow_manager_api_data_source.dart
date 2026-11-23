@@ -16,6 +16,18 @@ abstract interface class IFlowManagerApiDataSource {
   /// `POST /api/v2/rest/store/version/update` with `{devices:[{deviceId}]}`
   /// (no versionId: each device gets its latest build).
   Future<Map<String, dynamic>> requestUpdate(List<String> deviceIds);
+
+  /// `POST /api/v2/rest/order/sync`: up to 100 order messages (each exactly
+  /// the MQTT order message). Returns `results`, one per message in request
+  /// order. A failure throws [BaseException]; a
+  /// [BaseException.serverException] carries the HTTP status (-1 when
+  /// there was no response).
+  Future<List<Map<String, dynamic>>> syncOrders({
+    required String storeId,
+    required String hubId,
+    required String reason,
+    required List<Map<String, dynamic>> orders,
+  });
 }
 
 @Singleton(as: IFlowManagerApiDataSource)
@@ -52,6 +64,30 @@ class FlowManagerApiDataSource implements IFlowManagerApiDataSource {
       },
     ),
   );
+
+  @override
+  Future<List<Map<String, dynamic>>> syncOrders({
+    required String storeId,
+    required String hubId,
+    required String reason,
+    required List<Map<String, dynamic>> orders,
+  }) async {
+    final Map<String, dynamic> data = await _data(
+      _dio.post<Map<String, dynamic>>(
+        '/api/v2/rest/order/sync',
+        data: <String, dynamic>{
+          'storeId': storeId,
+          'hubId': hubId,
+          'reason': reason,
+          'orders': orders,
+        },
+      ),
+    );
+    final Object? results = data['results'];
+    return results is List
+        ? results.whereType<Map<String, dynamic>>().toList()
+        : const <Map<String, dynamic>>[];
+  }
 
   /// 1. Fails fast when the API URL or key is not configured.
   /// 2. Unwraps `data`; a non-success envelope or HTTP error becomes a

@@ -12,13 +12,15 @@ typedef FleetHeartbeatEvent = ({
 
 abstract class OrderRepository {
   Stream<bool> get connectionStream;
-  Stream<({String orderNo, String menuName})> get pickupCompleteStream;
+  // Stream<({String orderNo, String menuName})> get pickupCompleteStream;
+  Stream<({String orderNo, String menuName, String source})> get pickupCompleteStream;
   Stream<String> get calibrationStatusStream;
   Stream<String> get barcodeScanStream;
   /// Raw `beta/qr/complete` scan — see [OrderRepository] callers for how
   /// this is now the single source of truth for "this drink is done"
   /// across every production type.
-  Stream<String> get qrCompleteStream;
+  // Stream<String> get qrCompleteStream;
+  Stream<({String raw, String source})> get qrCompleteStream;
   Stream<FleetHeartbeatEvent> get fleetHeartbeatStream;
   Stream<Order> get kioskOrderStream;
   Stream<LeaderUpdateMessage> get leaderUpdateStream;

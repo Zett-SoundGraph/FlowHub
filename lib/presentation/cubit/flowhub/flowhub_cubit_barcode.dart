@@ -112,7 +112,9 @@ extension _FlowHubCubitBarcodeExtension on FlowHubCubit {
   /// since it's the only signal that exists for all three. See
   /// [_applyProgressToSubItem]'s status==3 branch for what Caye's own
   /// signal still does instead (queue bookkeeping only).
-  void _handleQrComplete(String rawData) {
+  // void _handleQrComplete(String rawData) {
+  void _handleQrComplete(({String raw, String source}) event) {
+    final String rawData = event.raw;
     Log.d('FlowHub', 'Complete scan received: $rawData');
     try {
       final parsed = _parseLabelScan(rawData);
@@ -144,6 +146,10 @@ extension _FlowHubCubitBarcodeExtension on FlowHubCubit {
           progress: 1.0,
           isExtracting: false,
           currentStage: 'Complete',
+          // Brewing completes at this scan; the scanner is brewCompletedBy.
+          brewCompletedAt: s.brewCompletedAt ?? DateTime.now(),
+          brewCompletedBy: s.brewCompletedBy ??
+              (event.source.isEmpty ? null : event.source),
           // Stop the estimated-time gauge timer — otherwise the next tick
           // would recompute from the (now stale) phase fields and drag this
           // back down below 1.0 (see _tickGaugePhases).

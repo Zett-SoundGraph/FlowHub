@@ -15,7 +15,7 @@ import 'package:flowhub/domain/enums/wled_device.dart';
 import 'package:flowhub/domain/usecases/publish_wled_api_usecase.dart';
 import 'package:flowhub/domain/usecases/append_order_history_usecase.dart';
 import 'package:flowhub/domain/usecases/check_machine_availability_usecase.dart';
-import 'package:flowhub/domain/usecases/clear_live_orders_snapshot_usecase.dart';
+// import 'package:flowhub/domain/usecases/clear_live_orders_snapshot_usecase.dart';
 import 'package:flowhub/domain/usecases/complete_cooking_usecase.dart';
 import 'package:flowhub/domain/usecases/complete_pickup_usecase.dart';
 import 'package:flowhub/domain/usecases/connect_order_socket_usecase.dart';
@@ -23,7 +23,8 @@ import 'package:flowhub/domain/repositories/device_repository.dart';
 import 'package:flowhub/domain/usecases/device/set_update_busy_check_usecase.dart';
 import 'package:flowhub/domain/entities/cloud/cloud_identity.dart';
 import 'package:flowhub/domain/repositories/cloud_repository.dart';
-import 'package:flowhub/domain/repositories/order_sync_repository.dart';
+import 'package:flowhub/domain/entities/order_sync/order_sync_rejection.dart';
+import 'package:flowhub/domain/repositories/order_store_repository.dart';
 import 'package:flowhub/domain/entities/pos_order/pos_order_ack.dart';
 import 'package:flowhub/domain/entities/pos_order/pos_order_message.dart';
 import 'package:flowhub/domain/exception/base_exception.dart';
@@ -46,7 +47,7 @@ import 'package:flowhub/domain/usecases/get_recipe_ingredient_labels_usecase.dar
 import 'package:flowhub/domain/usecases/get_recipe_popup_ingredients_usecase.dart';
 import 'package:flowhub/domain/usecases/get_recipe_timing_usecase.dart';
 import 'package:flowhub/domain/usecases/get_recipe_version_usecase.dart';
-import 'package:flowhub/domain/usecases/load_live_orders_snapshot_usecase.dart';
+// import 'package:flowhub/domain/usecases/load_live_orders_snapshot_usecase.dart';
 import 'package:flowhub/domain/usecases/observe_machine_connection_usecase.dart';
 import 'package:flowhub/domain/usecases/observe_barcode_scan_usecase.dart';
 import 'package:flowhub/domain/usecases/observe_calibration_status_usecase.dart';
@@ -77,7 +78,7 @@ import 'package:flowhub/domain/usecases/publish_leader_update_usecase.dart';
 import 'package:flowhub/domain/usecases/reconnect_printer_usecase.dart';
 import 'package:flowhub/domain/usecases/resolve_menu_options_usecase.dart';
 import 'package:flowhub/domain/usecases/restart_app_usecase.dart';
-import 'package:flowhub/domain/usecases/save_live_orders_snapshot_usecase.dart';
+// import 'package:flowhub/domain/usecases/save_live_orders_snapshot_usecase.dart';
 import 'package:flowhub/domain/usecases/send_cancel_command_usecase.dart';
 import 'package:flowhub/domain/usecases/send_cleaning_command_usecase.dart';
 import 'package:flowhub/domain/usecases/send_make_command_usecase.dart';
@@ -173,9 +174,10 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   // authoritative (a follower just mirrors the leader's next broadcast on
   // restart, see _initAsFollower).
   final RestartAppUseCase _restartApp;
-  final SaveLiveOrdersSnapshotUseCase _saveLiveOrdersSnapshot;
-  final LoadLiveOrdersSnapshotUseCase _loadLiveOrdersSnapshot;
-  final ClearLiveOrdersSnapshotUseCase _clearLiveOrdersSnapshot;
+  // Replaced by [_orderStore] (the SQLite order table).
+  // final SaveLiveOrdersSnapshotUseCase _saveLiveOrdersSnapshot;
+  // final LoadLiveOrdersSnapshotUseCase _loadLiveOrdersSnapshot;
+  // final ClearLiveOrdersSnapshotUseCase _clearLiveOrdersSnapshot;
 
   // FlowUpdater link (see FlowUpdaterService): the device record is only
   // logged for now (no UI yet), and the leader answers update.imminent
@@ -185,9 +187,15 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   StreamSubscription<void>? _deviceInfoChangedSubscription;
 
   // Flow Cloud (leader only): the session starts once FlowUpdater reports a
-  // registered device, and every order change is recorded for order sync.
+  // registered device.
   final CloudRepository _cloud;
-  final OrderSyncRepository _orderSync;
+
+  // The local order table (leader only): keeps the live orders across a
+  // restart and syncs every order change to Flow Manager.
+  final OrderStoreRepository _orderStore;
+
+  /// Order versions Flow Manager rejected for good (leader only).
+  Stream<OrderSyncRejection> get orderSyncRejections => _orderStore.rejections;
 
   // POS (Smaregi) orders from Flow Cloud (leader only) — see
   // flowhub_cubit_pos_order.dart. Handled one at a time through
@@ -246,8 +254,11 @@ class FlowHubCubit extends Cubit<FlowHubState> {
 
   StreamSubscription<bool>? _connectionSubscription;
   StreamSubscription<String>? _barcodeScanSubscription;
-  StreamSubscription<String>? _qrCompleteSubscription;
-  StreamSubscription<({String orderNo, String menuName})>?
+  // StreamSubscription<String>? _qrCompleteSubscription;
+  // StreamSubscription<({String orderNo, String menuName})>?
+  // _pickupCompleteSubscription;
+  StreamSubscription<({String raw, String source})>? _qrCompleteSubscription;
+  StreamSubscription<({String orderNo, String menuName, String source})>?
   _pickupCompleteSubscription;
   StreamSubscription<Order>? _kioskOrderSubscription;
   StreamSubscription<ExtractionProgress>? _machineProgressSubscription;
@@ -387,13 +398,13 @@ class FlowHubCubit extends Cubit<FlowHubState> {
     required DisposeMachineUseCase disposeMachine,
     required DisposePrinterUseCase disposePrinter,
     required RestartAppUseCase restartApp,
-    required SaveLiveOrdersSnapshotUseCase saveLiveOrdersSnapshot,
-    required LoadLiveOrdersSnapshotUseCase loadLiveOrdersSnapshot,
-    required ClearLiveOrdersSnapshotUseCase clearLiveOrdersSnapshot,
+    // required SaveLiveOrdersSnapshotUseCase saveLiveOrdersSnapshot,
+    // required LoadLiveOrdersSnapshotUseCase loadLiveOrdersSnapshot,
+    // required ClearLiveOrdersSnapshotUseCase clearLiveOrdersSnapshot,
     required DeviceRepository deviceRepository,
     required SetUpdateBusyCheckUseCase setUpdateBusyCheck,
     required CloudRepository cloud,
-    required OrderSyncRepository orderSync,
+    required OrderStoreRepository orderStore,
     required PosOrderRepository posOrders,
     required DecidePosOrderUseCase decidePosOrder,
     required ObserveLeaderUpdateUseCase observeLeaderUpdate,
@@ -456,13 +467,13 @@ class FlowHubCubit extends Cubit<FlowHubState> {
        _disposeMachine = disposeMachine,
        _disposePrinter = disposePrinter,
        _restartApp = restartApp,
-       _saveLiveOrdersSnapshot = saveLiveOrdersSnapshot,
-       _loadLiveOrdersSnapshot = loadLiveOrdersSnapshot,
-       _clearLiveOrdersSnapshot = clearLiveOrdersSnapshot,
+       // _saveLiveOrdersSnapshot = saveLiveOrdersSnapshot,
+       // _loadLiveOrdersSnapshot = loadLiveOrdersSnapshot,
+       // _clearLiveOrdersSnapshot = clearLiveOrdersSnapshot,
        _deviceRepository = deviceRepository,
        _setUpdateBusyCheck = setUpdateBusyCheck,
        _cloud = cloud,
-       _orderSync = orderSync,
+       _orderStore = orderStore,
        _posOrders = posOrders,
        _decidePosOrder = decidePosOrder,
        _observeLeaderUpdate = observeLeaderUpdate,
@@ -646,10 +657,8 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   }
 
   /// Connects to Flow Cloud as [device]'s store and hub. Logs and waits for
-  /// the next `device.changed` when the device is not registered yet.
-  /// 1. Starts the cloud session.
-  /// 2. Records the live orders once, so order sync starts and resends any
-  ///    version still pending from before a restart.
+  /// the next `device.changed` when the device is not registered yet. Order
+  /// sync starts with the session and resends whatever is still pending.
   Future<void> _startCloud(Device device) async {
     try {
       final CloudIdentity? identity = await _cloud.start(device);
@@ -662,19 +671,14 @@ class FlowHubCubit extends Cubit<FlowHubState> {
     } catch (e) {
       Log.w('FlowHub', 'Cloud session failed: $e');
     }
-    if (isClosed) return;
-    _recordOrdersForSync(state.orders);
   }
 
-  /// Records [orders] for Flow Cloud order sync. A failure is only logged:
-  /// the outbox resends on the next change or reconnect.
-  void _recordOrdersForSync(List<Order> orders) {
-    unawaited(
-      _orderSync.record(orders).catchError(
-        (Object e) => Log.w('FlowHub', 'Order sync record failed: $e'),
-      ),
-    );
-  }
+  /// Saves [orders] as the live orders in the local order table, which also
+  /// syncs the changed ones to Flow Manager. A failure is only logged: the
+  /// next change saves again.
+  Future<void> _saveOrders(List<Order> orders) => _orderStore
+      .save(orders)
+      .catchError((Object e) => Log.w('FlowHub', 'Order save failed: $e'));
 
   /// FlowUpdater's update.imminent check (leader only):
   /// 1. BUSY while any order is not DONE (NEW / BREW / CALL), or while the
@@ -694,7 +698,8 @@ class FlowHubCubit extends Cubit<FlowHubState> {
       return true;
     }
     if (state.orders.isNotEmpty) {
-      await _saveLiveOrdersSnapshot(state.orders);
+      // await _saveLiveOrdersSnapshot(state.orders);
+      await _saveOrders(state.orders);
     }
     Log.i(
       'FlowHub',
@@ -714,10 +719,16 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   /// saved after every change (see [_persistLiveOrders]), so the file always
   /// holds the current orders. Only the daily rollover clears it.
   Future<void> _restoreLiveOrdersSnapshot() async {
-    final orders = (await _loadLiveOrdersSnapshot(null)).fold(
-      (_) => const <Order>[],
-      (r) => r,
-    );
+    // final orders = (await _loadLiveOrdersSnapshot(null)).fold(
+    //   (_) => const <Order>[],
+    //   (r) => r,
+    // );
+    final List<Order> orders = await _orderStore.loadLive().catchError((
+      Object e,
+    ) {
+      Log.e('FlowHub', 'Order restore failed: $e');
+      return const <Order>[];
+    });
     _liveOrdersRestored = true;
     if (orders.isNotEmpty) {
       emit(state.copyWith(orders: orders));
@@ -748,7 +759,8 @@ class FlowHubCubit extends Cubit<FlowHubState> {
   /// don't disappear just because the printer glitched.
   Future<void> rebootPreservingOrders() async {
     if (FlowHubIdentity.role == FlowHubRole.leader) {
-      await _saveLiveOrdersSnapshot(state.orders);
+      // await _saveLiveOrdersSnapshot(state.orders);
+      await _saveOrders(state.orders);
     }
     await _restartApp(null);
   }
@@ -763,7 +775,8 @@ class FlowHubCubit extends Cubit<FlowHubState> {
       // right after they were cleared.
       _persistOrdersTimer?.cancel();
       _liveOrdersRestored = false;
-      await _clearLiveOrdersSnapshot(null);
+      // await _clearLiveOrdersSnapshot(null);
+      await _orderStore.clearLive();
     }
     await _restartApp(null);
   }
@@ -1047,22 +1060,24 @@ class FlowHubCubit extends Cubit<FlowHubState> {
     }
   }
 
-  /// Debounces [_persistLiveOrders] to [_persistOrdersDelay] after the last
-  /// order change (the gauge tick changes orders twice a second).
+  /// Saves at most once per [_persistOrdersDelay]: the first order change
+  /// starts the timer, later ones ride along. (A debounce never fired while
+  /// the gauge tick changed orders twice a second, so nothing was saved or
+  /// synced while a drink was brewing.)
   void _schedulePersistLiveOrders() {
     if (!_liveOrdersRestored) return;
-    _persistOrdersTimer?.cancel();
+    // _persistOrdersTimer?.cancel();
+    if (_persistOrdersTimer?.isActive ?? false) return;
     _persistOrdersTimer = Timer(_persistOrdersDelay, _persistLiveOrders);
   }
 
-  /// 1. Saves the live orders, so they survive a crash or restart.
-  /// 2. Records them for Flow Cloud order sync (changed orders get a new
-  ///    version and are published).
+  /// Saves the live orders to the local order table, so they survive a
+  /// crash or restart; changed orders get a new version and are synced.
   void _persistLiveOrders() {
     if (isClosed || !_liveOrdersRestored) return;
     final List<Order> orders = state.orders;
-    unawaited(_saveLiveOrdersSnapshot(orders));
-    _recordOrdersForSync(orders);
+    // unawaited(_saveLiveOrdersSnapshot(orders));
+    unawaited(_saveOrders(orders));
   }
 
   /// Throttle-with-trailing-edge: publishes immediately if the last
@@ -1123,11 +1138,16 @@ class FlowHubCubit extends Cubit<FlowHubState> {
     return item.copyWith(menuName: info.menuNameEN);
   }
 
-  /// Marks the order picked-up (moves it to DONE) when pickup is confirmed.
-  void _handlePickupComplete(({String orderNo, String menuName}) event) {
+  /// Marks the order picked-up (moves it to DONE) when pickup is confirmed;
+  /// the pickup table that sent it is the order's pickedUpBy.
+  // void _handlePickupComplete(({String orderNo, String menuName}) event) {
+  void _handlePickupComplete(
+    ({String orderNo, String menuName, String source}) event,
+  ) {
     final updatedOrders = state.orders.map((o) {
       if (o.orderNo != event.orderNo) return o;
-      return _restampIfTabChanged(o, _markPickedUp(o));
+      // return _restampIfTabChanged(o, _markPickedUp(o));
+      return _restampIfTabChanged(o, _markPickedUp(o, by: event.source));
     }).toList();
     emit(state.copyWith(orders: updatedOrders));
     Log.d('FlowHub', 'Pickup complete — order ${event.orderNo} moved to DONE');
@@ -1203,6 +1223,9 @@ class FlowHubCubit extends Cubit<FlowHubState> {
             productionType == ProductionType.combo;
         return s.copyWith(
           isExtracting: true,
+          // Brewing starts when the label is detached (order sync).
+          brewStartedAt: s.brewStartedAt ?? DateTime.now(),
+          brewStartedBy: s.brewStartedBy ?? FlowHubIdentity.deviceId,
           currentStage: 'Label attached — awaiting scan',
           progress: startsNudofPhase ? 0.0 : s.progress,
           phaseStartedAt: startsNudofPhase ? DateTime.now() : s.phaseStartedAt,
@@ -1458,8 +1481,11 @@ class FlowHubCubit extends Cubit<FlowHubState> {
     };
   }
 
-  /// Marks every sub-item of [order] as picked up.
-  Order _markPickedUp(Order order) => order.copyWith(
+  /// Marks every sub-item of [order] as picked up; [by] (the device that
+  /// recorded it) is kept as the order's pickedUpBy unless one is set.
+  // Order _markPickedUp(Order order) => order.copyWith(
+  Order _markPickedUp(Order order, {required String by}) => order.copyWith(
+    pickedUpBy: order.pickedUpBy ?? (by.isEmpty ? null : by),
     items: order.items
         .map(
           (i) => i.copyWith(
@@ -1517,6 +1543,8 @@ class FlowHubCubit extends Cubit<FlowHubState> {
       progress: 1.0,
       currentStage: 'Complete',
       phaseStartedAt: null,
+      brewCompletedAt: item.brewCompletedAt ?? DateTime.now(),
+      brewCompletedBy: item.brewCompletedBy ?? FlowHubIdentity.deviceId,
     ),
     OrderTab.done => item.copyWith(
       status: OrderStatus.pickedUp,
@@ -1545,6 +1573,8 @@ class FlowHubCubit extends Cubit<FlowHubState> {
       isError: false,
       progress: 0.0,
       currentStage: 'Extracting',
+      brewStartedAt: item.brewStartedAt ?? DateTime.now(),
+      brewStartedBy: item.brewStartedBy ?? FlowHubIdentity.deviceId,
       phaseStartedAt: startsNudofPhase ? DateTime.now() : null,
       phaseStartProgress: startsNudofPhase ? 0.0 : item.phaseStartProgress,
       phaseTargetProgress: startsNudofPhase
@@ -1867,6 +1897,8 @@ class FlowHubCubit extends Cubit<FlowHubState> {
               status: OrderStatus.ready,
               progress: 1.0,
               currentStage: 'Complete',
+              brewCompletedAt: s.brewCompletedAt ?? DateTime.now(),
+              brewCompletedBy: s.brewCompletedBy ?? FlowHubIdentity.deviceId,
             ),
           );
         }
@@ -1969,7 +2001,11 @@ class FlowHubCubit extends Cubit<FlowHubState> {
         }
         final updatedOrders = state.orders.map((o) {
           if (o.orderNo != order.orderNo) return o;
-          return _restampIfTabChanged(o, _markPickedUp(o));
+          // return _restampIfTabChanged(o, _markPickedUp(o));
+          return _restampIfTabChanged(
+            o,
+            _markPickedUp(o, by: FlowHubIdentity.deviceId),
+          );
         }).toList();
         emit(state.copyWith(orders: updatedOrders, errorMessage: null));
         return true;

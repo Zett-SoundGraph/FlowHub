@@ -7,6 +7,7 @@ import 'package:flowhub/core/constants/flowhub_identity.dart';
 import 'package:flowhub/core/di/di.dart';
 import 'package:flowhub/core/theme/app_theme.dart';
 import 'package:flowhub/domain/entities/index.dart';
+import 'package:flowhub/domain/entities/order_sync/order_sync_rejection.dart';
 import 'package:flowhub/presentation/cubit/index.dart';
 import 'package:flowhub/presentation/enums/index.dart';
 import 'package:flowhub/presentation/screens/caye_management_screen/caye_management_screen.dart';
@@ -48,6 +49,8 @@ class _FlowHubMainScreenState extends State<FlowHubMainScreen> {
   StreamSubscription<UpdateReminder>? _reminderSubscription;
   // POS orders cancelled after brewing started (leader only).
   StreamSubscription<String>? _posCancelSubscription;
+  // Order versions Flow Manager rejected for good (leader only).
+  StreamSubscription<OrderSyncRejection>? _syncRejectionSubscription;
 
   @override
   void initState() {
@@ -56,6 +59,9 @@ class _FlowHubMainScreenState extends State<FlowHubMainScreen> {
     if (FlowHubIdentity.role == FlowHubRole.leader) {
       _startUpdateReminder();
       _posCancelSubscription = _cubit.posCancelAlerts.listen(_showPosCancelAlert);
+      _syncRejectionSubscription = _cubit.orderSyncRejections.listen(
+        _showSyncRejection,
+      );
     }
   }
 
@@ -65,6 +71,7 @@ class _FlowHubMainScreenState extends State<FlowHubMainScreen> {
     _reminderOrdersSubscription?.cancel();
     _reminderSubscription?.cancel();
     _posCancelSubscription?.cancel();
+    _syncRejectionSubscription?.cancel();
     _reminder?.close();
     _orderListController.dispose();
     _cubit.close();
@@ -124,6 +131,25 @@ class _FlowHubMainScreenState extends State<FlowHubMainScreen> {
             child: const Text('OK'),
           ),
         ],
+      ),
+    );
+  }
+
+  /// An order version Flow Manager rejected for good. Rare, and nothing for
+  /// staff to do (the reason is in the log), so it shows briefly.
+  void _showSyncRejection(OrderSyncRejection rejection) {
+    if (!mounted) {
+      return;
+    }
+    final String reason =
+        rejection.error.isEmpty ? '' : ' (${rejection.error})';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 5),
+        content: Text(
+          'Order ${rejection.orderNo} could not be synced to Flow Manager'
+          '$reason',
+        ),
       ),
     );
   }

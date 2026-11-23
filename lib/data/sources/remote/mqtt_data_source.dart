@@ -18,12 +18,17 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 
 abstract interface class IMqttDataSource {
   Stream<bool> get connectionStream;
-  Stream<({String orderNo, String menuName})> get pickupCompleteStream;
+  // Stream<({String orderNo, String menuName})> get pickupCompleteStream;
+  /// `beta/pickuptable/pickup`; [source] is the sending device (see
+  /// eventSource), empty when unknown.
+  Stream<({String orderNo, String menuName, String source})> get pickupCompleteStream;
   Stream<String> get barcodeScanStream;
   /// Raw `beta/qr/complete` scan — the same pipe-delimited label format as
   /// [barcodeScanStream], just scanned at the "this drink is done" station
-  /// instead of the "start brewing" one.
-  Stream<String> get qrCompleteStream;
+  /// instead of the "start brewing" one. [source] is the scanner (see
+  /// eventSource), empty when unknown.
+  // Stream<String> get qrCompleteStream;
+  Stream<({String raw, String source})> get qrCompleteStream;
   Stream<FleetHeartbeatEvent> get fleetHeartbeatStream;
   Stream<Order> get kioskOrderStream;
   /// Follower-side: the leader's full-state broadcast.
@@ -252,13 +257,18 @@ class MqttDataSource implements IMqttDataSource {
 
   final StreamController<bool> _connectionController =
       StreamController<bool>.broadcast();
-  final StreamController<({String orderNo, String menuName})>
+  // final StreamController<({String orderNo, String menuName})>
+  //     _pickupCompleteController =
+  //     StreamController<({String orderNo, String menuName})>.broadcast();
+  final StreamController<({String orderNo, String menuName, String source})>
       _pickupCompleteController =
-      StreamController<({String orderNo, String menuName})>.broadcast();
+      StreamController<({String orderNo, String menuName, String source})>.broadcast();
   final StreamController<String> _barcodeScanController =
       StreamController<String>.broadcast();
-  final StreamController<String> _qrCompleteController =
-      StreamController<String>.broadcast();
+  // final StreamController<String> _qrCompleteController =
+  //     StreamController<String>.broadcast();
+  final StreamController<({String raw, String source})> _qrCompleteController =
+      StreamController<({String raw, String source})>.broadcast();
   final StreamController<FleetHeartbeatEvent> _fleetHeartbeatController =
       StreamController<FleetHeartbeatEvent>.broadcast();
   final StreamController<Order> _kioskOrderController =
@@ -299,14 +309,24 @@ class MqttDataSource implements IMqttDataSource {
       Map.unmodifiable(_wledOnlineByDevice);
 
   @override
-  Stream<({String orderNo, String menuName})> get pickupCompleteStream =>
+  // Stream<({String orderNo, String menuName})> get pickupCompleteStream =>
+  Stream<({String orderNo, String menuName, String source})> get pickupCompleteStream =>
       _pickupCompleteController.stream;
 
   @override
   Stream<String> get barcodeScanStream => _barcodeScanController.stream;
 
   @override
-  Stream<String> get qrCompleteStream => _qrCompleteController.stream;
+  // Stream<String> get qrCompleteStream => _qrCompleteController.stream;
+  Stream<({String raw, String source})> get qrCompleteStream => _qrCompleteController.stream;
+
+  /// The sending device, from the `eventId` the Flow devices build as
+  /// `<device>-<millis>` (e.g. `flow-qr-reader-call-1792586087235` →
+  /// `flow-qr-reader-call`); empty when there is no eventId.
+  static String eventSource(Map<String, dynamic> json) {
+    final String eventId = json['eventId']?.toString() ?? '';
+    return eventId.replaceFirst(RegExp(r'-\d+$'), '');
+  }
 
   @override
   Stream<FleetHeartbeatEvent> get fleetHeartbeatStream =>
@@ -556,7 +576,10 @@ class MqttDataSource implements IMqttDataSource {
             orderNo: raw.isEmpty ? null : raw,
             payload: json,
           ));
-          if (raw.isNotEmpty) _qrCompleteController.add(raw);
+          // if (raw.isNotEmpty) _qrCompleteController.add(raw);
+          if (raw.isNotEmpty) {
+            _qrCompleteController.add((raw: raw, source: eventSource(json)));
+          }
           continue;
         }
 
@@ -570,7 +593,10 @@ class MqttDataSource implements IMqttDataSource {
             payload: json,
           ));
           if (orderNo.isNotEmpty) {
-            _pickupCompleteController.add((orderNo: orderNo, menuName: ''));
+            // _pickupCompleteController.add((orderNo: orderNo, menuName: ''));
+            _pickupCompleteController.add(
+              (orderNo: orderNo, menuName: '', source: eventSource(json)),
+            );
           }
           continue;
         }

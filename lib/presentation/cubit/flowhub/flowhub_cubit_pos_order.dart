@@ -133,7 +133,6 @@ extension _FlowHubCubitPosOrderExtension on FlowHubCubit {
   Future<void> _persistLiveOrdersNow() async {
     _persistOrdersTimer?.cancel();
     final List<Order> orders = state.orders;
-    await _saveLiveOrdersSnapshot(orders);
-    _recordOrdersForSync(orders);
+    await _saveOrders(orders);
   }
 }

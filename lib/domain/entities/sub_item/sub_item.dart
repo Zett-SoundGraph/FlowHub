@@ -60,6 +60,14 @@ abstract class SubItem with _$SubItem {
     // order sync; null for kiosk items.
     String? itemType,
     int? amount,
+    // Order sync times, each set once: brewing started when this cup's
+    // label was detached (or it was moved into BREW by hand); brewing
+    // completed at the complete-station scan (or a manual CALL). *By is
+    // the device that did it (e.g. `flow-qr-reader-call`, or this Hub).
+    DateTime? brewStartedAt,
+    String? brewStartedBy,
+    DateTime? brewCompletedAt,
+    String? brewCompletedBy,
   }) = _SubItem;
 
   factory SubItem.initial(String menuName) => SubItem(

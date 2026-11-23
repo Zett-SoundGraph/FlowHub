@@ -34,6 +34,9 @@ abstract class Order with _$Order {
     // as finished and syncs with tab CANCELLED.
     DateTime? cancelledAt,
     String? cancelledBy,
+    // Device that recorded the pickup (e.g. `flow-pickup-table`, or this
+    // Hub for a pickup completed by hand); sent through order sync.
+    String? pickedUpBy,
   }) = _Order;
 
   factory Order.fromJson(Map<String, dynamic> json) => _$OrderFromJson(json);
