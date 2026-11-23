@@ -49,7 +49,11 @@ abstract interface class ICloudMqttDataSource {
 class CloudMqttDataSource implements ICloudMqttDataSource {
   static const String _tag = 'CloudMqtt';
   static const Duration _retryInterval = Duration(seconds: 10);
-  static const int _keepAliveSeconds = 30;
+  /// Ping every 15 s; no answer within another 15 s drops the connection
+  /// and auto-reconnect takes over, so a dead link (e.g. the internet cut)
+  /// is noticed in about 30 s. Same as the store broker; provisional.
+  static const int _keepAliveSeconds = 15;
+  static const int _noResponseSeconds = 15;
 
   final StreamController<bool> _connectionController =
       StreamController<bool>.broadcast();
@@ -115,6 +119,7 @@ class CloudMqttDataSource implements ICloudMqttDataSource {
     );
     client.port = CloudConstants.mqttPort;
     client.keepAlivePeriod = _keepAliveSeconds;
+    client.disconnectOnNoResponsePeriod = _noResponseSeconds;
     client.autoReconnect = true;
     client.resubscribeOnAutoReconnect = false;
     client.logging(on: false);
@@ -124,6 +129,12 @@ class CloudMqttDataSource implements ICloudMqttDataSource {
     };
     client.onDisconnected = () {
       Log.w(_tag, 'Disconnected');
+      _connectionController.add(false);
+    };
+    // Auto-reconnect does not call onDisconnected, so the connection is
+    // reported lost here (order sync counts the downtime from this).
+    client.onAutoReconnect = () {
+      Log.w(_tag, 'Connection lost — auto-reconnecting');
       _connectionController.add(false);
     };
     client.onAutoReconnected = () {

@@ -387,6 +387,10 @@ class MqttDataSource implements IMqttDataSource {
     // that a dead connection gets noticed (and auto-reconnect kicks in)
     // quickly instead of taking up to 30s.
     client.keepAlivePeriod = 15;
+    // No ping answer within 15 s drops the connection so auto-reconnect
+    // takes over; without it a dead link (e.g. Wi-Fi dropped) was never
+    // noticed. Same as the Flow Cloud client; provisional.
+    client.disconnectOnNoResponsePeriod = 15;
     client.autoReconnect = true;
     client.logging(on: false);
     client.onConnected = () {
@@ -398,7 +402,13 @@ class MqttDataSource implements IMqttDataSource {
       Log.d(_tag, 'Disconnected from broker');
       _connectionController.add(false);
     };
-    client.onAutoReconnect = () => Log.d(_tag, 'Auto-reconnecting to broker');
+    // Auto-reconnect does not call onDisconnected, so the connection is
+    // reported lost here; onConnected reports it back when it succeeds.
+    // client.onAutoReconnect = () => Log.d(_tag, 'Auto-reconnecting to broker');
+    client.onAutoReconnect = () {
+      Log.d(_tag, 'Auto-reconnecting to broker');
+      _connectionController.add(false);
+    };
     client.onAutoReconnected = () => Log.d(_tag, 'Auto-reconnect sequence completed');
 
     // Assigned here — BEFORE client.connect() below — not after it succeeds.
